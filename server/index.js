@@ -94,6 +94,41 @@ app.post('/enviar-certificado', upload.single('arquivo'), async (req, res) => {
     }
 })
 
+app.get('/grupos-progresso/:alunoId', async (req, res) => {
+    const { alunoId } = req.params;
+
+    try {
+        const grupos = await prisma.grupo.findMany({
+            orderBy: { numero: 'asc' },
+            include: {
+                certificados: {
+                    where: {
+                        alunoId: Number(alunoId),
+                        status: 'APROVADO'
+                    }
+                }
+            }
+        });
+
+        const progresso = grupos.map(grupo => {
+            const horasAprovadas = grupo.certificados.reduce((soma, cert) => soma + cert.horas, 0);
+
+            return {
+                id: grupo.id,
+                numero: grupo.numero,
+                descricao: grupo.descricao,
+                horasMaximas: grupo.horasMaximas,
+                horasAprovadas: horasAprovadas || 0
+            };
+        });
+
+        res.json(progresso);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao calcular progresso." });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
 })

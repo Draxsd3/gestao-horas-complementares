@@ -1,19 +1,22 @@
-import { useState } from 'react';
 import api from '../api/api';
+import { useState } from 'react';
 import { LogIn, Mail, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
             const response = await api.post('/login', { email, senha });
             alert(`Bem-vindo, ${response.data.nome}`);
-            // depois o usuario será salvo no localstorage
+            localStorage.setItem('usuario', JSON.stringify(response.data));
+            navigate('/dashboard');
         } catch (error) {
-            alert('Erro ao logar: ' + error.response.data.error);
+            alert('Erro ao logar: ' + (error.response?.data?.error || 'Erro interno'));
         }
     };
 
