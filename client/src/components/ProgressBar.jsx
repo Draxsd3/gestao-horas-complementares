@@ -1,27 +1,47 @@
 export default function ProgressBar(props) {
-    const { tema, atual, maximo, Icon } = props; // adicionei essa linha devido a um erro que estava dando no Icon quando o passavamos diretamente como parametro dentro da nossa Function ProgressBar()
+    const { tema, atual, maximo, Icon, numero } = props;
 
     const porcentagem = Math.min((atual * 100) / maximo, 100);
-    const corBarra = porcentagem >= 100 ? 'bg-green-500' : 'bg-blue-500';
+    const concluido = porcentagem >= 100;
+    const corBarra = concluido
+        ? 'linear-gradient(90deg, #3c9b5f 0%, #6dc98d 100%)'
+        : 'linear-gradient(90deg, #ce1126 0%, #f04b58 100%)';
 
     return (
-        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-800 rounded-lg text-blue-400">
-                        <Icon size={20} />
+        <article className="w-full max-w-[380px] rounded-[1.9rem] border border-[var(--line)] bg-white p-6 shadow-[0_20px_45px_rgba(44,52,61,0.08)]">
+            <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                    <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-[1.2rem] bg-[var(--brand-red-soft)] text-[var(--brand-red)]">
+                        <Icon size={22} />
                     </div>
-                    <h3 className="text-sm font-semibold text-slate-200">{tema}</h3>
+                    <div>
+                        <span className="inline-flex rounded-full bg-[#eef1f4] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+                            Grupo {numero}
+                        </span>
+                        <h3 className="mt-3 text-base font-bold leading-6 text-[var(--ink)]">{tema}</h3>
+                    </div>
                 </div>
-                <span className="text-xs font-mono text-slate-400">{atual}/{maximo}h</span>
+
+                <span className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-[var(--muted)]">
+                    {atual}/{maximo}h
+                </span>
             </div>
 
-            <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+            <div className="relative mb-4 h-3 w-full overflow-hidden rounded-full bg-[#e4e8ec]">
                 <div
-                    className={`h-full transition-all duration-500 ease-out ${corBarra}`}
-                    style={{ width: `${porcentagem}%` }}
-                ></div>
+                    className="h-full transition-all duration-500 ease-out"
+                    style={{ width: `${porcentagem}%`, background: corBarra }}
+                />
             </div>
-        </div>
+
+            <div className="flex items-center justify-between text-sm">
+                <span className="text-[var(--muted)]">
+                    {concluido ? 'Carga concluida' : 'Aproveitamento registrado'}
+                </span>
+                <strong className={concluido ? 'text-[#2f8f57]' : 'text-[var(--ink)]'}>
+                    {Math.round(porcentagem)}%
+                </strong>
+            </div>
+        </article>
     );
 }

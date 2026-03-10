@@ -1,12 +1,27 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
+const fs = require('fs');
 const path = require('path');
 
 const app = express();
 const prisma = new PrismaClient();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
+const uploadsDir = path.join(__dirname, 'uploads');
+const allowedFileTypes = new Set([
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/jpg'
+]);
+
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 app.use(cors());
 app.use(express.json());
@@ -62,19 +77,46 @@ app.post('/login', async (req, res) => {
 // config de onde e como salvar os arquivos
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, uploadsDir);
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + '-' + file.originalname); // nome do arquivo: data do envio - nome original do arquivo
     }
 });
 
-const upload = multer({ storage: storage });
-app.use('/uploads', express.static('uploads'));
+const upload = multer({
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        if (allowedFileTypes.has(file.mimetype)) {
+            cb(null, true);
+            return;
+        }
 
-app.post('/enviar-certificado', upload.single('arquivo'), async (req, res) => {
+        cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'arquivo'));
+    }
+});
+app.use('/uploads', express.static(uploadsDir));
+
+app.post('/enviar-certificado', (req, res, next) => {
+    upload.single('arquivo')(req, res, (error) => {
+        if (error instanceof multer.MulterError) {
+            return res.status(400).json({ error: "Envie apenas arquivos PDF ou imagem." });
+        }
+
+        if (error) {
+            return res.status(400).json({ error: "Erro ao processar arquivo enviado." });
+        }
+
+        next();
+    });
+}, async (req, res) => {
     const { titulo, horas, alunoId, grupoId } = req.body;
-    const arquivoUrl = req.file ? req.file.path : '';
+
+    if (!req.file) {
+        return res.status(400).json({ error: "O arquivo do certificado Ã© obrigatÃ³rio." });
+    }
+
+    const arquivoUrl = req.file.path;
 
     try {
         const novoCertificado = await prisma.certificado.create({
@@ -126,6 +168,38 @@ app.get('/grupos-progresso/:alunoId', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Erro ao calcular progresso." });
+    }
+});
+
+app.get('/certificados-resumo/:alunoId', async (req, res) => {
+    const { alunoId } = req.params;
+
+    try {
+        const certificados = await prisma.certificado.findMany({
+            where: {
+                alunoId: Number(alunoId)
+            },
+            select: {
+                status: true
+            }
+        });
+
+        const resumo = certificados.reduce((acc, certificado) => {
+            if (certificado.status === 'PENDENTE') acc.emAnalise += 1;
+            if (certificado.status === 'APROVADO') acc.aprovados += 1;
+            if (certificado.status === 'REJEITADO') acc.reprovados += 1;
+            return acc;
+        }, {
+            emAnalise: 0,
+            aprovados: 0,
+            reprovados: 0,
+            total: certificados.length
+        });
+
+        res.json(resumo);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao carregar resumo dos certificados." });
     }
 });
 

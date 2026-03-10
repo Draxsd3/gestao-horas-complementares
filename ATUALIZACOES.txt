@@ -1,0 +1,72 @@
+ATUALIZACOES DO PROJETO - GESTAO DE HORAS COMPLEMENTARES
+
+1. BACKEND
+- Ajustado o servidor para ler variaveis de ambiente com dotenv.
+- Criada a pasta de uploads automaticamente quando o servidor inicia.
+- Melhorado o envio de arquivos para aceitar PDF e imagens.
+- Adicionada validacao para impedir upload sem arquivo ou com tipo invalido.
+- Criada rota de resumo de certificados por aluno.
+- Ajustado o seed para ler configuracoes do ambiente corretamente.
+- Criado arquivo server/.env.example com exemplo de configuracao.
+
+2. BANCO E DADOS INICIAIS
+- Banco local preparado para o projeto.
+- Migration aplicada.
+- Seed executado com grupos iniciais.
+- Usuario de teste criado diretamente no banco para acesso.
+
+3. FRONTEND - ESTRUTURA GERAL
+- Nova identidade visual inspirada em sistemas da Etec/CPS.
+- Cabecalho institucional criado para as paginas internas.
+- Loader de transicao criado para login, logout e carregamento do painel.
+- Loader ajustado para fundo branco e visual minimalista.
+
+4. FRONTEND - LOGIN
+- Tela de login recriada com layout mais simples.
+- Logo da Etec centralizada dentro do card.
+- Arte do Governo do Estado posicionada no topo da pagina.
+- Fluxo de entrada mantido com preload "Entrando...".
+
+5. FRONTEND - HOME / DASHBOARD
+- Dashboard remodelado com visual mais limpo.
+- Cards superiores reorganizados.
+- Resumo de certificados exibindo em analise, aprovados e reprovados.
+- Grafico de pizza adicionado para leitura visual dos certificados avaliados.
+- Navegacao ajustada para Home, Grupos de horas, Perfil, Novo certificado e Sair.
+
+6. FRONTEND - PERFIL
+- Tela de perfil criada.
+- Exibicao de dados do aluno, horas aprovadas, grupos com avanço e progresso total.
+- Upload local de imagem de perfil habilitado no navegador.
+- Secao "Dados da conta" simplificada para nome, e-mail e capacidade total.
+
+7. FRONTEND - GRUPOS DE HORAS
+- Pagina especifica de grupos criada.
+- Layout remodelado para um estilo mais minimalista.
+- Cards de grupos refinados.
+- Ultima linha centralizada quando sobrarem poucos cards.
+
+8. FRONTEND - NOVO CERTIFICADO
+- Tela de envio reorganizada.
+- Botao "Voltar ao painel" removido.
+- Secao de orientacoes simplificada.
+- Aceite de PDF e imagem alinhado com a validacao do backend.
+
+9. NAVEGACAO E EXPERIENCIA
+- Logout ajustado para mostrar preload "Saindo..." antes de limpar a sessao.
+- Carregamento do painel ajustado para usar o novo loader.
+
+10. ARQUIVOS NOVOS / PRINCIPAIS ALTERADOS
+- client/src/components/InstitutionalHeader.jsx
+- client/src/components/TransitionLoader.jsx
+- client/src/pages/Login.jsx
+- client/src/pages/Dashboard.jsx
+- client/src/pages/Perfil.jsx
+- client/src/pages/GruposHoras.jsx
+- client/src/pages/EnviarCertificado.jsx
+- client/src/components/ProgressBar.jsx
+- client/src/index.css
+- client/src/App.jsx
+- server/index.js
+- server/prisma/seed.js
+- server/.env.example
