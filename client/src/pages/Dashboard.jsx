@@ -1,4 +1,5 @@
 import api from '../api/api';
+import AppFooter from '../components/AppFooter';
 import InstitutionalHeader from '../components/InstitutionalHeader';
 import TransitionLoader from '../components/TransitionLoader';
 import { useQuery } from '@tanstack/react-query';
@@ -155,7 +156,7 @@ export default function Dashboard() {
     const totalHours = grupos?.reduce((sum, grupo) => sum + grupo.horasMaximas, 0) || 0;
 
     return (
-        <div className="min-h-screen bg-[var(--page-bg)] pb-12">
+        <div className="flex min-h-screen flex-col bg-[var(--page-bg)]">
             {isTransitioning ? <TransitionLoader label="Saindo..." /> : null}
             <InstitutionalHeader
                 title="Painel do aluno"
@@ -172,7 +173,7 @@ export default function Dashboard() {
                 ]}
             />
 
-            <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 md:px-6 lg:px-8">
+            <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 pb-16 pt-8 md:px-6 lg:px-8">
                 <section className="grid gap-5 lg:grid-cols-[1.25fr_0.8fr_0.7fr]">
                     <div className="rounded-[2rem] border border-white/70 bg-[linear-gradient(135deg,#4a525d_0%,#2b3138_100%)] p-6 text-white shadow-[0_28px_65px_rgba(34,40,48,0.24)]">
                         <p className="mb-2 text-base font-medium uppercase tracking-[0.18em] text-[#ffd7dc]">
@@ -227,6 +228,8 @@ export default function Dashboard() {
                     </div>
                 </section>
             </main>
+
+            <AppFooter />
         </div>
     );
 }
