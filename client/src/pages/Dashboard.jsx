@@ -5,71 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Clock3, BadgeCheck, BadgeX } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-function DashboardSkeleton() {
-    return (
-        <div className="min-h-screen bg-[var(--page-bg)] pb-12">
-            <InstitutionalHeader
-                hideHeading
-                navItems={[
-                    { label: 'Home', onClick: () => {} },
-                    { label: 'Grupos de horas', onClick: () => {} },
-                    { label: 'Perfil', onClick: () => {} },
-                ]}
-                actionItems={[
-                    { label: 'Novo certificado', onClick: () => {} },
-                    { label: 'Sair', onClick: () => {} },
-                ]}
-            />
-
-            <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 md:px-6 lg:px-8">
-                <section className="grid gap-5 lg:grid-cols-[1.25fr_0.8fr_0.7fr]">
-                    <div className="rounded-[2rem] bg-[linear-gradient(135deg,#4a525d_0%,#2b3138_100%)] p-6 shadow-[0_28px_65px_rgba(34,40,48,0.16)]">
-                        <div className="h-4 w-44 animate-pulse rounded-full bg-white/20" />
-                        <div className="mt-5 h-10 w-4/5 animate-pulse rounded-2xl bg-white/18" />
-                        <div className="mt-3 h-4 w-3/5 animate-pulse rounded-full bg-white/15" />
-                    </div>
-
-                    {[1, 2].map((item) => (
-                        <div
-                            key={item}
-                            className="rounded-[1.7rem] border border-[var(--line)] bg-white p-4 shadow-[0_20px_40px_rgba(44,52,61,0.05)]"
-                        >
-                            <div className="mb-4 flex items-center gap-3">
-                                <div className="h-10 w-10 animate-pulse rounded-2xl bg-[var(--brand-red-soft)]" />
-                                <div className="h-3 w-28 animate-pulse rounded-full bg-[#e7eaee]" />
-                            </div>
-                            <div className="h-10 w-24 animate-pulse rounded-2xl bg-[#eef1f4]" />
-                            <div className="mt-3 h-3 w-full animate-pulse rounded-full bg-[#eef1f4]" />
-                            <div className="mt-3 h-3 w-3/4 animate-pulse rounded-full bg-[#eef1f4]" />
-                        </div>
-                    ))}
-                </section>
-
-                <section className="grid items-center gap-5 lg:grid-cols-[1fr_0.8fr]">
-                    <div className="flex justify-center py-4">
-                        <div className="h-72 w-72 animate-pulse rounded-full bg-[#eef1f4]" />
-                    </div>
-
-                    <div className="space-y-4">
-                        {[1, 2].map((item) => (
-                            <div
-                                key={item}
-                                className="rounded-[1.5rem] border border-[var(--line)] bg-white px-5 py-4 shadow-[0_18px_35px_rgba(44,52,61,0.05)]"
-                            >
-                                <div className="mb-3 flex items-center gap-3">
-                                    <div className="h-10 w-10 animate-pulse rounded-2xl bg-[var(--brand-red-soft)]" />
-                                    <div className="h-3 w-24 animate-pulse rounded-full bg-[#e7eaee]" />
-                                </div>
-                                <div className="h-8 w-20 animate-pulse rounded-xl bg-[#eef1f4]" />
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            </main>
-        </div>
-    );
-}
+import { getHomeRoute, getStoredUser } from '../utils/session';
 
 function OverviewCard({ currentHours, totalHours }) {
     const percent = totalHours > 0 ? Math.round((currentHours * 100) / totalHours) : 0;
@@ -145,7 +81,8 @@ function LargePieChart({ aprovados, reprovados }) {
     );
 }
 
-function WideMetricCard({ icon: Icon, label, value, helper, tone = 'green' }) {
+function WideMetricCard({ icon, label, value, helper, tone = 'green' }) {
+    const Icon = icon;
     const tones = {
         green: 'bg-[#eaf7ef] text-[#2f8f57]',
         red: 'bg-[var(--brand-red-soft)] text-[var(--brand-red)]',
@@ -173,8 +110,7 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [isTransitioning, setIsTransitioning] = useState(false);
 
-    const usuarioJson = localStorage.getItem('usuario');
-    const usuario = usuarioJson ? JSON.parse(usuarioJson) : null;
+    const usuario = getStoredUser();
 
     const { data: grupos, isLoading: loadingGrupos, error: errorGrupos } = useQuery({
         queryKey: ['grupos-progresso', usuario?.id],
@@ -182,7 +118,7 @@ export default function Dashboard() {
             const res = await api.get(`/grupos-progresso/${usuario.id}`);
             return res.data;
         },
-        enabled: !!usuario?.id
+        enabled: !!usuario?.id && usuario?.role === 'ALUNO'
     });
 
     const { data: resumo, isLoading: loadingResumo, error: errorResumo } = useQuery({
@@ -191,7 +127,7 @@ export default function Dashboard() {
             const res = await api.get(`/certificados-resumo/${usuario.id}`);
             return res.data;
         },
-        enabled: !!usuario?.id
+        enabled: !!usuario?.id && usuario?.role === 'ALUNO'
     });
 
     const handleLogout = () => {
@@ -204,6 +140,11 @@ export default function Dashboard() {
 
     if (!usuario) {
         Promise.resolve().then(() => navigate('/'));
+        return null;
+    }
+
+    if (usuario.role !== 'ALUNO') {
+        Promise.resolve().then(() => navigate(getHomeRoute(usuario.role)));
         return null;
     }
 

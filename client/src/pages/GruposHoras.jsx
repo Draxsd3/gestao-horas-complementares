@@ -6,12 +6,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Code2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getHomeRoute, getStoredUser } from '../utils/session';
 
 export default function GruposHoras() {
     const navigate = useNavigate();
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const usuarioJson = localStorage.getItem('usuario');
-    const usuario = usuarioJson ? JSON.parse(usuarioJson) : null;
+    const usuario = getStoredUser();
 
     const { data: grupos, isLoading, error } = useQuery({
         queryKey: ['grupos-progresso', usuario?.id],
@@ -19,7 +19,7 @@ export default function GruposHoras() {
             const res = await api.get(`/grupos-progresso/${usuario.id}`);
             return res.data;
         },
-        enabled: !!usuario?.id
+        enabled: !!usuario?.id && usuario?.role === 'ALUNO'
     });
 
     const handleLogout = () => {
@@ -32,6 +32,11 @@ export default function GruposHoras() {
 
     if (!usuario) {
         Promise.resolve().then(() => navigate('/'));
+        return null;
+    }
+
+    if (usuario.role !== 'ALUNO') {
+        Promise.resolve().then(() => navigate(getHomeRoute(usuario.role)));
         return null;
     }
 

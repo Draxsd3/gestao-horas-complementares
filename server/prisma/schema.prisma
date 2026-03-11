@@ -8,31 +8,31 @@ datasource db {
 }
 
 model Usuario {
-  id           Int      @id @default(autoincrement())
-  nome         String
-  email        String   @unique
-  senha        String 
-  role         String   @default("ALUNO") // se o usuário é Aluno ou Professor
-  certificados Certificado[]
+  id                   Int           @id @default(autoincrement())
+  nome                 String
+  email                String        @unique
+  senha                String
+  role                 String        @default("ALUNO")
+  certificadosEnviados Certificado[] @relation("CertificadosAluno")
 }
 
 model Grupo {
-  id           Int      @id @default(autoincrement())
-  numero       Int      @unique
-  descricao    String   @db.Text
-  horasMaximas Int 
+  id           Int           @id @default(autoincrement())
+  numero       Int           @unique
+  descricao    String
+  horasMaximas Int
   certificados Certificado[]
 }
 
 model Certificado {
-  id           Int      @id @default(autoincrement())
-  titulo       String
-  horas        Int
-  status       String   @default("PENDENTE") //PENDENDE, APROVADO, REJEITADO
-  arquivoUrl   String
-  dataEnvio    DateTime @default(now())
-  alunoId      Int
-  aluno        Usuario  @relation(fields: [alunoId], references: [id])
-  grupoId      Int
-  grupo        Grupo    @relation(fields: [grupoId], references: [id])
+  id         Int      @id @default(autoincrement())
+  titulo     String
+  horas      Int
+  status     String   @default("PENDENTE")
+  arquivoUrl String
+  dataEnvio  DateTime @default(now())
+  alunoId    Int
+  grupoId    Int
+  aluno      Usuario  @relation("CertificadosAluno", fields: [alunoId], references: [id])
+  grupo      Grupo    @relation(fields: [grupoId], references: [id])
 }

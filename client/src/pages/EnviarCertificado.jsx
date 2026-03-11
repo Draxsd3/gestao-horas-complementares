@@ -5,11 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, Send, FileUp, BadgeCheck } from 'lucide-react';
 import InstitutionalHeader from '../components/InstitutionalHeader';
 import TransitionLoader from '../components/TransitionLoader';
+import { getHomeRoute, getStoredUser } from '../utils/session';
 
 export default function EnviarCertificado() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    const usuario = getStoredUser();
     const [isTransitioning, setIsTransitioning] = useState(false);
 
     const [titulo, setTitulo] = useState('');
@@ -53,6 +54,16 @@ export default function EnviarCertificado() {
             navigate('/');
         }, 450);
     };
+
+    if (!usuario) {
+        Promise.resolve().then(() => navigate('/'));
+        return null;
+    }
+
+    if (usuario.role !== 'ALUNO') {
+        Promise.resolve().then(() => navigate(getHomeRoute(usuario.role)));
+        return null;
+    }
 
     return (
         <div className="min-h-screen bg-[var(--page-bg)] pb-12">

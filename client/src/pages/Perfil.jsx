@@ -2,11 +2,13 @@ import api from '../api/api';
 import InstitutionalHeader from '../components/InstitutionalHeader';
 import TransitionLoader from '../components/TransitionLoader';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserRound, Mail, ShieldCheck, Clock3, GraduationCap, LogOut, Camera } from 'lucide-react';
+import { UserRound, Mail, LogOut, Camera } from 'lucide-react';
+import { getHomeRoute, getStoredUser } from '../utils/session';
 
-function InfoCard({ icon: Icon, label, value }) {
+function InfoCard({ icon, label, value }) {
+    const Icon = icon;
     return (
         <div className="rounded-[1.25rem] bg-[linear-gradient(180deg,#ffffff_0%,#f8f9fb_100%)] p-4">
             <div className="mb-2 flex items-center gap-2 text-[var(--muted)]">
@@ -18,33 +20,17 @@ function InfoCard({ icon: Icon, label, value }) {
     );
 }
 
-function MetricTile({ icon: Icon, value, label }) {
-    return (
-        <div className="p-5 text-center">
-            <Icon className="mb-3 text-[#ffb4bc]" size={22} />
-            <strong className="block text-3xl font-bold">{value}</strong>
-            <span className="mt-1 block text-sm text-[#d4d9de]">{label}</span>
-        </div>
-    );
-}
-
 export default function Perfil() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
-    const usuarioJson = localStorage.getItem('usuario');
-    const usuario = usuarioJson ? JSON.parse(usuarioJson) : null;
+    const usuario = getStoredUser();
     const imageStorageKey = useMemo(() => usuario ? `usuario-imagem-${usuario.id}` : null, [usuario]);
-    const [profileImage, setProfileImage] = useState('');
+    const [profileImage, setProfileImage] = useState(() => {
+        if (!imageStorageKey) return '';
+        return localStorage.getItem(imageStorageKey) || '';
+    });
     const [isTransitioning, setIsTransitioning] = useState(false);
-
-    useEffect(() => {
-        if (!imageStorageKey) return;
-        const savedImage = localStorage.getItem(imageStorageKey);
-        if (savedImage) {
-            setProfileImage(savedImage);
-        }
-    }, [imageStorageKey]);
 
     const { data: grupos, isLoading, error } = useQuery({
         queryKey: ['grupos-progresso', usuario?.id],
@@ -52,7 +38,7 @@ export default function Perfil() {
             const res = await api.get(`/grupos-progresso/${usuario.id}`);
             return res.data;
         },
-        enabled: !!usuario?.id
+        enabled: !!usuario?.id && usuario?.role === 'ALUNO'
     });
 
     const handleLogout = () => {
@@ -78,6 +64,11 @@ export default function Perfil() {
 
     if (!usuario) {
         Promise.resolve().then(() => navigate('/'));
+        return null;
+    }
+
+    if (usuario.role !== 'ALUNO') {
+        Promise.resolve().then(() => navigate(getHomeRoute(usuario.role)));
         return null;
     }
 

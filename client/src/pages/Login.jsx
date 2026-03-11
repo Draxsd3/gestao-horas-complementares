@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import TransitionLoader from '../components/TransitionLoader';
 import etecRegistro from '../assets/etec_registro.png';
 import logoGovernoSP from '../assets/logo-governo-do-estado-sp.png';
+import { getHomeRoute } from '../utils/session';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -18,7 +19,7 @@ export default function Login() {
             setIsTransitioning(true);
             const response = await api.post('/login', { email, senha });
             localStorage.setItem('usuario', JSON.stringify(response.data));
-            setTimeout(() => navigate('/dashboard'), 450);
+            setTimeout(() => navigate(getHomeRoute(response.data.role)), 450);
         } catch (error) {
             setIsTransitioning(false);
             alert('Erro ao logar: ' + (error.response?.data?.error || 'Erro interno'));
@@ -54,7 +55,7 @@ export default function Login() {
                         <div className="mb-8 text-center">
                             <h1 className="text-3xl font-bold text-[var(--ink)]">Entrar</h1>
                             <p className="mt-2 text-sm text-[var(--muted)]">
-                                Acesse o painel do aluno com seu e-mail e senha.
+                                Acesse o painel de aluno ou professor com seu e-mail e senha.
                             </p>
                         </div>
 
