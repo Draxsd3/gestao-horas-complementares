@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api/api';
+import AppFooter from '../components/AppFooter';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Send, FileUp, BadgeCheck } from 'lucide-react';
 import InstitutionalHeader from '../components/InstitutionalHeader';
@@ -66,7 +67,7 @@ export default function EnviarCertificado() {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--page-bg)] pb-12">
+        <div className="flex min-h-screen flex-col bg-[var(--page-bg)]">
             {isTransitioning ? <TransitionLoader label="Saindo..." /> : null}
             <InstitutionalHeader
                 hideHeading
@@ -81,7 +82,7 @@ export default function EnviarCertificado() {
                 ]}
             />
 
-            <main className="mx-auto max-w-6xl px-4 pt-8 md:px-6 lg:px-8">
+            <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-8 md:px-6 lg:px-8">
                 <div className="grid gap-6 lg:grid-cols-[0.95fr_1.15fr]">
                     <section className="rounded-[2rem] border border-white/70 bg-[linear-gradient(145deg,#4b545f_0%,#343b44_100%)] p-8 text-white shadow-[0_28px_60px_rgba(36,42,50,0.24)]">
                         <span className="inline-flex text-xs font-semibold uppercase tracking-[0.28em] text-[#ffd7dc]">
@@ -173,6 +174,8 @@ export default function EnviarCertificado() {
                     </form>
                 </div>
             </main>
+
+            <AppFooter />
         </div>
     );
 }
