@@ -8,31 +8,40 @@ datasource db {
 }
 
 model Usuario {
-  id                   Int           @id @default(autoincrement())
-  nome                 String
-  email                String        @unique
-  senha                String
-  role                 String        @default("ALUNO")
-  certificadosEnviados Certificado[] @relation("CertificadosAluno")
+  id                     Int           @id @default(autoincrement())
+  nome                   String
+  email                  String        @unique
+  senha                  String
+  role                   String        @default("ALUNO")
+  professorId            Int?
+  professor              Usuario?      @relation("ProfessorAlunos", fields: [professorId], references: [id])
+  alunos                 Usuario[]     @relation("ProfessorAlunos")
+  certificadosEnviados   Certificado[] @relation("CertificadosAluno")
+  certificadosAnalisados Certificado[] @relation("CertificadosProfessor")
 }
 
 model Grupo {
   id           Int           @id @default(autoincrement())
   numero       Int           @unique
-  descricao    String
+  descricao    String        @db.Text
   horasMaximas Int
   certificados Certificado[]
 }
 
 model Certificado {
-  id         Int      @id @default(autoincrement())
-  titulo     String
-  horas      Int
-  status     String   @default("PENDENTE")
-  arquivoUrl String
-  dataEnvio  DateTime @default(now())
-  alunoId    Int
-  grupoId    Int
-  aluno      Usuario  @relation("CertificadosAluno", fields: [alunoId], references: [id])
-  grupo      Grupo    @relation(fields: [grupoId], references: [id])
+  id                  Int      @id @default(autoincrement())
+  titulo              String
+  horas               Int
+  horasValidadas      Int?
+  status              String   @default("PENDENTE")
+  arquivoUrl          String
+  observacaoProfessor String?  @db.Text
+  dataEnvio           DateTime @default(now())
+  dataAnalise         DateTime?
+  alunoId             Int
+  aluno               Usuario  @relation("CertificadosAluno", fields: [alunoId], references: [id])
+  grupoId             Int
+  grupo               Grupo    @relation(fields: [grupoId], references: [id])
+  analisadoPorId      Int?
+  analisadoPor        Usuario? @relation("CertificadosProfessor", fields: [analisadoPorId], references: [id])
 }
