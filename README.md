@@ -1,337 +1,362 @@
-# 🚀 Sistema de Gestão de Horas Complementares
+# Gestao de Horas Complementares
 
-Sistema **Fullstack** para gerenciamento de **horas complementares acadêmicas**, onde alunos podem enviar certificados e acompanhar seu progresso de horas em diferentes categorias através de **barras de progresso dinâmicas**.
+Sistema full stack para controle de horas complementares academicas, com fluxo separado para alunos e professores.
 
-O sistema permite:
+O projeto permite:
+- cadastro e login por perfil
+- envio de certificados pelo aluno
+- acompanhamento de progresso por grupo de horas
+- analise, validacao e rejeicao de certificados pelo professor
+- cadastro de alunos vinculado ao professor
 
-* 📄 Envio de certificados
-* ⏳ Avaliação de certificados
-* 📊 Acompanhamento de progresso por categoria
-* 👤 Sistema de autenticação de usuários
+## Visao Geral
 
----
+O sistema foi construido para digitalizar o processo de horas complementares dentro de um contexto escolar. O aluno envia comprovantes e acompanha seu progresso. O professor recebe os certificados, valida a carga horaria aceita, registra observacoes e organiza sua base de alunos em um painel separado.
 
-# 🛠️ Tecnologias Utilizadas
+## Principais Modulos
 
-## 🎨 Frontend
+### Aluno
+- login
+- dashboard com resumo de horas e status dos certificados
+- visualizacao dos grupos de horas
+- envio de certificado com arquivo PDF ou imagem
+- perfil do usuario
 
-* React (Vite)
-* Tailwind CSS
-* React Router DOM
-* React Query (TanStack Query)
-* Lucide React
+### Professor
+- dashboard com indicadores consolidados
+- cadastro e vinculacao de alunos
+- listagem compacta e pesquisavel de alunos
+- fila de analise de certificados
+- validacao de horas, troca de grupo e observacao do professor
 
-## ⚙️ Backend
+## Stack Tecnologica
 
-* Node.js
-* Express
-* Prisma ORM
-* Multer (upload de arquivos)
-* CORS
+### Frontend
+- React 19
+- Vite
+- React Router DOM
+- TanStack Query
+- Axios
+- Tailwind CSS 4
+- Lucide React
 
-## 🗄️ Banco de Dados
+### Backend
+- Node.js
+- Express
+- Prisma ORM
+- Multer
+- CORS
+- dotenv
 
-* PostgreSQL
-* Prisma Studio
+### Banco de dados
+- PostgreSQL
+- Supabase
 
----
+### Deploy
+- Frontend: Vercel
+- Backend: Render
+- Banco: Supabase
 
-# 📋 Pré-requisitos
+## Arquitetura do Projeto
 
-Antes de rodar o projeto, você precisa ter instalado:
-
-* Node.js **v18 ou superior**
-* PostgreSQL
-* Git
-
-Verifique se está tudo instalado:
-
-```bash
-node -v
-npm -v
-psql --version
+```text
+gestao-horas-complementares/
+|-- client/
+|   |-- public/
+|   |-- src/
+|   |   |-- api/
+|   |   |-- assets/
+|   |   |-- components/
+|   |   `-- pages/
+|   |-- package.json
+|   `-- vercel.json
+|
+|-- server/
+|   |-- prisma/
+|   |   |-- migrations/
+|   |   |-- schema.prisma
+|   |   `-- seed.js
+|   |-- uploads/
+|   |-- index.js
+|   `-- package.json
+|
+`-- README.md
 ```
 
----
+## Tecnologias por Camada
 
-# 📁 Estrutura do Projeto
+| Camada | Responsabilidade | Tecnologias |
+|---|---|---|
+| Frontend | Interface e navegacao | React, Vite, React Router, Tailwind |
+| Estado assinc | Consumo e cache de dados | TanStack Query, Axios |
+| Backend | API REST e upload | Express, Multer |
+| Persistencia | Modelagem e acesso a dados | Prisma |
+| Banco | Usuarios, grupos e certificados | PostgreSQL / Supabase |
+| Deploy | Hospedagem | Vercel + Render |
 
-```
-horas-complementares/
-│
-├── client/          # Frontend React + Vite
-│
-├── server/          # Backend Node + Express
-│   ├── prisma/      # Schema e migrations
-│   ├── uploads/     # Arquivos enviados
-│   └── index.js     # Servidor principal
-│
-└── README.md
-```
+## Modelagem Principal
 
----
+### Usuario
+- `ALUNO` ou `PROFESSOR`
+- professor pode possuir varios alunos vinculados
+- aluno envia certificados
+- professor pode analisar certificados
 
-# ⚙️ Configuração do Backend
+### Grupo
+- agrupa categorias de horas complementares
+- possui limite maximo de horas por categoria
 
-Entre na pasta do servidor:
+### Certificado
+- pertence a um aluno
+- pertence a um grupo
+- pode ser `PENDENTE`, `APROVADO` ou `REJEITADO`
+- pode ter `horasValidadas`
+- pode ter `observacaoProfessor`
 
-```bash
-cd server
-```
+## Rotas do Frontend
 
-Instale as dependências:
+### Publicas
+- `/` login
 
-```bash
-npm install
-```
+### Aluno
+- `/dashboard`
+- `/grupos`
+- `/enviar`
+- `/perfil`
 
----
+### Professor
+- `/professor`
+- `/professor/alunos`
+- `/professor/certificados`
 
-# 🔐 Variáveis de Ambiente
+## API Principal
 
-Crie um arquivo `.env` dentro da pasta **server**.
+### Autenticacao e base geral
+- `POST /cadastro`
+- `POST /login`
+- `GET /grupos`
 
-Exemplo:
+### Aluno
+- `POST /enviar-certificado`
+- `GET /grupos-progresso/:alunoId`
+- `GET /certificados-resumo/:alunoId`
 
-```
-DATABASE_URL="postgresql://USUARIO:SENHA@localhost:5432/NOME_DO_BANCO?schema=public"
+### Professor
+- `GET /professor/dashboard/:professorId`
+- `GET /professor/alunos/:professorId`
+- `POST /professor/alunos`
+- `GET /professor/certificados/:professorId`
+- `PATCH /professor/certificados/:certificadoId`
+
+## Pre-requisitos
+
+- Node.js 18 ou superior
+- npm
+- PostgreSQL ou acesso a um banco PostgreSQL remoto
+- Git
+
+## Variaveis de Ambiente
+
+### Backend
+
+Crie `server/.env`:
+
+```env
+DATABASE_URL="postgresql://usuario:senha@host:5432/banco?schema=public"
 PORT=3001
 ```
 
----
+Se estiver usando Supabase com pooler, a URL normalmente segue este formato:
 
-# 🗄️ Criar Banco e Rodar Migrations
+```env
+DATABASE_URL="postgresql://postgres.<project-ref>:<db-password>@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
+PORT=3001
+```
 
-Execute o comando:
+### Frontend
+
+Crie `client/.env`:
+
+```env
+VITE_API_URL="http://localhost:3001"
+```
+
+## Instalacao Local
+
+### 1. Clonar o repositorio
 
 ```bash
-npx prisma migrate dev --name init
+git clone <url-do-repositorio>
+cd gestao-horas-complementares
 ```
 
-Esse comando irá:
-
-* Criar as tabelas no banco
-* Aplicar as migrations
-* Gerar o Prisma Client
-
----
-
-# 📂 Criar Pasta de Uploads
-
-O sistema salva os certificados enviados pelos alunos.
-
-Crie a pasta:
+### 2. Instalar dependencias do backend
 
 ```bash
-mkdir uploads
-```
-
----
-
-# ▶️ Rodar o Backend
-
-```bash
-node index.js
-```
-
-O servidor ficará disponível em:
-
-```
-http://localhost:3001
-```
-
-Teste acessando no navegador:
-
-```
-http://localhost:3001
-```
-
-Resposta esperada:
-
-```
-Servidor voando!
-```
-
----
-
-# 🎨 Rodando o Frontend
-
-Entre na pasta do frontend:
-
-```bash
-cd client
-```
-
-Instale as dependências:
-
-```bash
+cd server
 npm install
 ```
 
-Execute o projeto:
+### 3. Instalar dependencias do frontend
 
 ```bash
+cd ../client
+npm install
+```
+
+## Banco de Dados
+
+### Gerar o Prisma Client
+
+```bash
+cd server
+npm run build
+```
+
+### Aplicar migrations
+
+```bash
+npx prisma migrate deploy
+```
+
+Para desenvolvimento local, tambem pode ser usado:
+
+```bash
+npx prisma migrate dev
+```
+
+### Popular com dados iniciais
+
+```bash
+npx prisma db seed
+```
+
+O seed cria:
+- 10 grupos de horas
+- 1 professor de teste
+- 1 aluno de teste vinculado a esse professor
+
+Credenciais de seed:
+
+```text
+Professor
+email: professor@teste.com
+senha: 123456
+
+Aluno
+email: aluno@teste.com
+senha: 123456
+```
+
+## Executando o Projeto
+
+### Backend
+
+```bash
+cd server
+npm run start
+```
+
+API local:
+
+```text
+http://localhost:3001
+```
+
+### Frontend
+
+```bash
+cd client
 npm run dev
 ```
 
-O frontend estará disponível em:
+App local:
 
-```
+```text
 http://localhost:5173
 ```
 
----
+## Scripts Disponiveis
 
-# 🔄 Comunicação Frontend ↔ Backend
+### `server/package.json`
 
-Frontend roda em:
+- `npm run dev` inicia o backend com nodemon
+- `npm run start` inicia o backend em modo normal
+- `npm run build` gera o Prisma Client
+- `npm run render-build` gera o Prisma Client e aplica migrations no deploy
 
-```
-localhost:5173
-```
+### `client/package.json`
 
-Backend roda em:
+- `npm run dev` inicia o frontend com Vite
+- `npm run build` gera o bundle de producao
+- `npm run preview` serve o build localmente
+- `npm run lint` valida o frontend com ESLint
 
-```
-localhost:3001
-```
+## Uploads
 
-O **CORS** está habilitado para permitir a comunicação entre ambos.
+Os certificados sao enviados para a pasta local `server/uploads/`.
 
----
+Formatos aceitos:
+- PDF
+- JPG
+- JPEG
+- PNG
+- WEBP
 
-# 📄 Rotas da API
+Observacao:
+- no estado atual, o upload e local ao servidor
+- para producao, o ideal e migrar esse fluxo para um storage dedicado
 
-## Cadastro de usuário
+## Deploy
 
-```
-POST /cadastro
-```
+### Backend no Render
 
-Body:
+Configuracao recomendada:
+- Root Directory: `server`
+- Build Command: `npm install && npx prisma generate && npx prisma migrate deploy`
+- Start Command: `node index.js`
 
-```json
-{
- "nome": "Samuel",
- "email": "samuel@email.com",
- "senha": "123456"
-}
-```
+Variaveis:
+- `DATABASE_URL`
+- `PORT` opcional
 
----
+### Frontend na Vercel
 
-## Login
+Configuracao recomendada:
+- Root Directory: `client`
+- Framework Preset: `Vite`
+- Build Command: `npm run build`
+- Output Directory: `dist`
 
-```
-POST /login
-```
+Variavel:
 
----
-
-## Listar grupos
-
-```
-GET /grupos
-```
-
-Retorna todas as categorias de horas.
-
----
-
-## Progresso do aluno
-
-```
-GET /grupos-progresso/:alunoId
+```env
+VITE_API_URL="https://seu-backend.onrender.com"
 ```
 
-Retorna o progresso de horas aprovadas por grupo.
+## Interface
 
----
+O frontend foi estruturado com foco em:
+- navegacao separada por perfil
+- dashboard de aluno com atalhos mobile
+- painel do professor dividido em telas de alunos e certificados
+- menu mobile com atalho de perfil
+- layout responsivo para desktop e dispositivos menores
 
-## Enviar certificado
+## Melhorias Futuras
 
-```
-POST /enviar-certificado
-```
+- autenticacao com hash de senha e JWT
+- storage externo para certificados
+- historico mais detalhado de analises
+- filtros avancados por periodo, grupo e status
+- exportacao de relatorios
 
-Upload contendo:
+## Observacoes
 
-* título
-* horas
-* alunoId
-* grupoId
-* arquivo
+- o projeto hoje usa senha em texto puro apenas para fins educacionais
+- antes de usar em producao, o fluxo de autenticacao precisa ser endurecido
+- o backend depende da consistencia entre `schema.prisma`, migrations e `prisma generate`
 
-Os arquivos enviados ficam salvos em:
+## Licenca
 
-```
-/uploads
-```
-
----
-
-# 🧪 Prisma Studio
-
-Interface visual para gerenciar o banco de dados.
-
-Execute:
-
-```bash
-npx prisma studio
-```
-
-Abrirá em:
-
-```
-http://localhost:5555
-```
-
-Permite:
-
-* visualizar usuários
-* editar registros
-* aprovar certificados
-
----
-
-# 🔒 Status dos Certificados
-
-Cada certificado possui um status:
-
-| Status    | Significado          |
-| --------- | -------------------- |
-| PENDENTE  | Aguardando avaliação |
-| APROVADO  | Horas contabilizadas |
-| REJEITADO | Certificado inválido |
-
----
-
-# 📊 Dashboard
-
-O painel do aluno permite:
-
-* visualizar progresso de horas
-* acompanhar certificados aprovados
-* enviar novos certificados
-
-Interface desenvolvida com:
-
-* Tailwind CSS
-* React Query
-* Lucide Icons
-
----
-
-# 🚀 Melhorias Futuras
-
-* Autenticação com JWT
-* Sistema de aprovação para professores
-* Upload para storage externo (S3 ou Cloudinary)
-* Notificações para certificados aprovados
-* Dashboard administrativo
-
----
-
-# 📜 Licença
-
-Este projeto foi desenvolvido para fins educacionais.
+Projeto de uso educacional.
