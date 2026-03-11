@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AppFooter from './AppFooter';
 import InstitutionalHeader from './InstitutionalHeader';
 import TransitionLoader from './TransitionLoader';
 import { getHomeRoute, getStoredUser } from '../utils/session';
@@ -33,12 +34,13 @@ export default function ProfessorLayout({
     }
 
     return (
-        <div className="min-h-screen bg-[var(--page-bg)] pb-12">
+        <div className="flex min-h-screen flex-col bg-[var(--page-bg)]">
             {isTransitioning ? <TransitionLoader label="Saindo..." /> : null}
 
             <InstitutionalHeader
                 title={title}
                 subtitle={subtitle}
+                hideHeading
                 navItems={[
                     { label: 'Painel', onClick: () => navigate('/professor') },
                     { label: 'Alunos', onClick: () => navigate('/professor/alunos') },
@@ -50,9 +52,11 @@ export default function ProfessorLayout({
                 ]}
             />
 
-            <main className="mx-auto max-w-7xl space-y-8 px-4 pt-8 md:px-6 lg:px-8">
+            <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 pb-16 pt-8 md:px-6 lg:px-8">
                 {children}
             </main>
+
+            <AppFooter />
         </div>
     );
 }

@@ -16,17 +16,17 @@ function SummaryCard({ icon, label, value, helper, tone = 'red' }) {
     };
 
     return (
-        <div className="rounded-[1.7rem] border border-[var(--line)] bg-[linear-gradient(180deg,#ffffff_0%,#f7f8fa_100%)] p-5 shadow-[0_18px_35px_rgba(44,52,61,0.08)]">
+        <div className="flex min-h-[220px] flex-col rounded-[1.5rem] border border-[var(--line)] bg-[linear-gradient(180deg,#ffffff_0%,#f7f8fa_100%)] p-5 shadow-[0_16px_30px_rgba(44,52,61,0.08)]">
             <div className="flex items-center gap-3">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${tones[tone]}`}>
-                    <Icon size={19} />
+                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${tones[tone]}`}>
+                    <Icon size={18} />
                 </div>
                 <div>
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--muted)]">{label}</p>
                     <p className="text-sm text-[var(--muted)]">{helper}</p>
                 </div>
             </div>
-            <strong className="mt-5 block text-[2.4rem] font-bold leading-none text-[var(--ink)]">{value}</strong>
+            <strong className="mt-5 block text-[2.15rem] font-bold leading-none text-[var(--ink)]">{value}</strong>
         </div>
     );
 }
@@ -76,7 +76,7 @@ export default function ProfessorDashboard() {
                 { label: 'Cadastrar aluno', onClick: () => navigate('/professor/alunos') },
             ]}
         >
-            <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
+            <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] lg:items-center">
                 <div className="rounded-[2rem] border border-white/70 bg-[linear-gradient(135deg,#4a525d_0%,#2b3138_100%)] p-7 text-white shadow-[0_28px_65px_rgba(34,40,48,0.24)]">
                     <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#ffd7dc]">
                         Painel do professor
@@ -113,6 +113,15 @@ export default function ProfessorDashboard() {
                 />
             </section>
 
+            <section className="lg:hidden">
+                <QuickActionCard
+                    title="Gerenciar alunos"
+                    description="Cadastre novos alunos, acompanhe o total de certificados enviados e veja o resumo individual de cada vinculo em uma tela dedicada."
+                    actionLabel="Abrir tela de alunos"
+                    onClick={() => navigate('/professor/alunos')}
+                />
+            </section>
+
             <section className="grid gap-5 lg:grid-cols-3">
                 <SummaryCard
                     icon={BadgeCheck}
@@ -137,7 +146,16 @@ export default function ProfessorDashboard() {
                 />
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-2">
+            <section className="lg:hidden">
+                <QuickActionCard
+                    title="Avaliar certificados"
+                    description="Analise comprovantes recebidos, ajuste o grupo da atividade e valide a carga horaria diretamente na tela de certificados."
+                    actionLabel="Abrir tela de certificados"
+                    onClick={() => navigate('/professor/certificados')}
+                />
+            </section>
+
+            <section className="hidden gap-6 lg:grid lg:grid-cols-2">
                 <QuickActionCard
                     title="Gerenciar alunos"
                     description="Cadastre novos alunos, acompanhe o total de certificados enviados e veja o resumo individual de cada vinculo em uma tela dedicada."
