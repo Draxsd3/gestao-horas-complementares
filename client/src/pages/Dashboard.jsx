@@ -2,7 +2,7 @@ import api from '../api/api';
 import InstitutionalHeader from '../components/InstitutionalHeader';
 import TransitionLoader from '../components/TransitionLoader';
 import { useQuery } from '@tanstack/react-query';
-import { Clock3, BadgeCheck, BadgeX } from 'lucide-react';
+import { ArrowRight, Clock3, BadgeCheck, BadgeX } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getHomeRoute, getStoredUser } from '../utils/session';
@@ -184,6 +184,22 @@ export default function Dashboard() {
                         <p className="mt-3 max-w-lg text-sm leading-6 text-[#d4d9de]">
                             Veja suas horas concluidas e os certificados que aguardam avaliacao.
                         </p>
+                        <div className="mt-6 flex flex-wrap gap-3 md:hidden">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/grupos')}
+                                className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-colors hover:bg-[#f4f6f8]"
+                            >
+                                Ver grupos de horas <ArrowRight size={16} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/enviar')}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/8"
+                            >
+                                Enviar certificado
+                            </button>
+                        </div>
                     </div>
 
                     <OverviewCard currentHours={currentHours} totalHours={totalHours} />

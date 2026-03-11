@@ -3,7 +3,7 @@ import ProgressBar from '../components/ProgressBar';
 import InstitutionalHeader from '../components/InstitutionalHeader';
 import TransitionLoader from '../components/TransitionLoader';
 import { useQuery } from '@tanstack/react-query';
-import { Code2 } from 'lucide-react';
+import { ArrowRight, Code2, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getHomeRoute, getStoredUser } from '../utils/session';
@@ -71,6 +71,15 @@ export default function GruposHoras() {
                         <p className="mt-3 max-w-2xl text-sm text-[var(--muted)]">
                             Acompanhe o progresso de cada categoria validada para o seu curso.
                         </p>
+                        <div className="mt-5 inline-flex rounded-[1.6rem] border border-[var(--line)] bg-white p-2 shadow-[0_14px_28px_rgba(44,52,61,0.06)] md:hidden">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/perfil')}
+                                className="inline-flex items-center gap-2 rounded-[1.1rem] bg-[var(--brand-red)] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-red-dark)]"
+                            >
+                                <UserRound size={16} /> Ir para perfil <ArrowRight size={15} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-6">
