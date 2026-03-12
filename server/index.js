@@ -42,6 +42,15 @@ function parseId(value) {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+function normalizeEmail(email) {
+    return typeof email === 'string' ? email.trim().toLowerCase() : '';
+}
+
+function normalizeSerie(serie) {
+    const normalizedSerie = typeof serie === 'string' ? serie.trim() : '';
+    return normalizedSerie || null;
+}
+
 function serializeCertificado(certificado) {
     return {
         ...certificado,
@@ -54,6 +63,23 @@ async function buscarProfessor(professorId) {
         where: {
             id: professorId,
             role: 'PROFESSOR'
+        }
+    });
+}
+
+async function buscarUsuarioPorEmail(email) {
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail) {
+        return null;
+    }
+
+    return prisma.usuario.findFirst({
+        where: {
+            email: {
+                equals: normalizedEmail,
+                mode: 'insensitive'
+            }
         }
     });
 }
@@ -75,13 +101,21 @@ app.get('/grupos', async (req, res) => {
 });
 
 app.post('/cadastro', async (req, res) => {
-    const { nome, email, senha, role, professorId } = req.body;
+    const { nome, email, senha, role, professorId, serie } = req.body;
+    const normalizedEmail = normalizeEmail(email);
 
     try {
+        const usuarioExistente = await buscarUsuarioPorEmail(normalizedEmail);
+
+        if (usuarioExistente) {
+            return res.status(400).json({ error: 'E-mail ja cadastrado ou dados invalidos.' });
+        }
+
         const novoUsuario = await prisma.usuario.create({
             data: {
                 nome,
-                email,
+                email: normalizedEmail,
+                serie: role === 'ALUNO' || !role ? normalizeSerie(serie) : null,
                 senha,
                 role: role || 'ALUNO',
                 professorId: role === 'ALUNO' || !role ? parseId(professorId) : null
@@ -99,9 +133,7 @@ app.post('/login', async (req, res) => {
     const { email, senha } = req.body;
 
     try {
-        const usuario = await prisma.usuario.findUnique({
-            where: { email }
-        });
+        const usuario = await buscarUsuarioPorEmail(email);
 
         if (usuario && usuario.senha === senha) {
             res.json({
@@ -401,6 +433,7 @@ app.get('/professor/alunos/:professorId', async (req, res) => {
                 id: aluno.id,
                 nome: aluno.nome,
                 email: aluno.email,
+                serie: aluno.serie,
                 totalCertificados: aluno.certificadosEnviados.length,
                 ...resumo
             };
@@ -414,8 +447,9 @@ app.get('/professor/alunos/:professorId', async (req, res) => {
 });
 
 app.post('/professor/alunos', async (req, res) => {
-    const { nome, email, senha, professorId } = req.body;
+    const { nome, email, senha, professorId, serie } = req.body;
     const professorIdNumerico = parseId(professorId);
+    const normalizedEmail = normalizeEmail(email);
 
     if (!professorIdNumerico) {
         return res.status(400).json({ error: 'Professor invalido.' });
@@ -428,10 +462,17 @@ app.post('/professor/alunos', async (req, res) => {
             return res.status(404).json({ error: 'Professor nao encontrado.' });
         }
 
+        const usuarioExistente = await buscarUsuarioPorEmail(normalizedEmail);
+
+        if (usuarioExistente) {
+            return res.status(400).json({ error: 'Nao foi possivel cadastrar o aluno.' });
+        }
+
         const aluno = await prisma.usuario.create({
             data: {
                 nome,
-                email,
+                email: normalizedEmail,
+                serie: normalizeSerie(serie),
                 senha,
                 role: 'ALUNO',
                 professorId: professorIdNumerico
@@ -518,7 +559,7 @@ app.patch('/professor/certificados/:certificadoId', async (req, res) => {
         ? req.body.observacaoProfessor.trim()
         : null;
 
-    if (!certificadoId || !professorId || !grupoId) {
+    if (!certificadoId || !professorId) {
         return res.status(400).json({ error: 'Dados invalidos para avaliar certificado.' });
     }
 
@@ -546,9 +587,14 @@ app.patch('/professor/certificados/:certificadoId', async (req, res) => {
             return res.status(404).json({ error: 'Certificado nao encontrado para este professor.' });
         }
 
+        const grupoIdAvaliacao = grupoId || certificado.grupoId;
         let horasValidadas = null;
 
         if (status === 'APROVADO') {
+            if (!grupoIdAvaliacao) {
+                return res.status(400).json({ error: 'Selecione um grupo valido para aprovar o certificado.' });
+            }
+
             horasValidadas = Number(req.body.horasValidadas);
 
             if (!Number.isFinite(horasValidadas) || horasValidadas <= 0) {
@@ -564,7 +610,7 @@ app.patch('/professor/certificados/:certificadoId', async (req, res) => {
             where: { id: certificadoId },
             data: {
                 status,
-                grupoId,
+                grupoId: grupoIdAvaliacao,
                 horasValidadas,
                 observacaoProfessor: observacaoProfessor || null,
                 dataAnalise: new Date(),
