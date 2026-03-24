@@ -1,7 +1,7 @@
 # Gestao de Horas Complementares
 
 <p align="center">
-  Plataforma full stack para gestao de horas complementares, com fluxo de envio por alunos e analise operacional por professores.
+  Plataforma web para instituicoes de ensino organizarem o envio, a analise e a validacao de horas complementares de forma clara, acompanhavel e centralizada.
 </p>
 
 <p align="center">
@@ -16,87 +16,178 @@
 
 ## Visao Geral
 
-O **Gestao de Horas Complementares** e uma aplicacao web voltada para instituicoes de ensino que precisam:
+O **Gestao de Horas Complementares** foi pensado para escolas que precisam acompanhar atividades extracurriculares de seus alunos com mais previsibilidade, menos retrabalho e melhor rastreabilidade.
 
-- registrar alunos e professores por perfil
-- organizar horas complementares por grupos/categorias
-- receber certificados com upload de arquivo
-- acompanhar horas aprovadas e pendencias
-- validar, rejeitar e reenquadrar certificados enviados
+Em vez de concentrar o processo em planilhas soltas, e-mails e conferencias manuais, o sistema organiza tudo em um fluxo unico:
 
-O sistema separa claramente os fluxos de:
+- o aluno envia o comprovante
+- o professor analisa o documento
+- o sistema registra a decisao
+- as horas validadas passam a compor o progresso do aluno por grupo
 
-- **Aluno**: acompanha progresso, envia certificados e consulta seu perfil
-- **Professor**: cadastra alunos, analisa certificados e valida horas
+O resultado e um ambiente em que a instituicao consegue enxergar:
 
-## Destaques Tecnicos
+- quem enviou certificados
+- o que ainda esta pendente
+- quais horas ja foram aprovadas
+- em qual grupo cada atividade foi contabilizada
+- quais observacoes foram registradas durante a analise
 
-- Frontend SPA com React, Vite e React Router
-- Consumo de dados com cache e sincronizacao via TanStack Query
-- Backend REST com Express e organizacao centrada em rotas de aluno e professor
-- Prisma ORM com migrations versionadas e seed inicial
-- Modelagem relacional com vinculo professor-aluno
-- Upload local de certificados com `multer`
-- Interface responsiva com navegacao mobile e atalhos por contexto
-- Deploy preparado para **Vercel** no frontend e **Render** no backend
+## Proposta do Sistema
 
-## Tecnologias Utilizadas
+O projeto atende uma necessidade comum em instituicoes de ensino tecnico e profissionalizante: controlar horas complementares sem perder transparencia para o aluno nem controle pedagogico para a equipe responsavel.
 
-### Frontend
+O sistema foi desenhado para:
 
-- React 19
-- Vite
-- React Router DOM
-- TanStack Query
-- Axios
-- Tailwind CSS 4
-- Lucide React
+- reduzir erros no lancamento de horas
+- centralizar comprovantes em um unico ambiente
+- permitir acompanhamento por perfil de acesso
+- facilitar a organizacao por categorias de horas
+- dar visibilidade ao historico de decisao sobre cada certificado
 
-### Backend
+## Como Funciona na Pratica
 
-- Node.js
-- Express
-- Prisma ORM
-- multer
-- cors
-- dotenv
+### 1. Vinculo entre professor e alunos
 
-### Banco de Dados
+Cada aluno pode ser vinculado a um professor responsavel. Esse professor passa a acompanhar a base de alunos sob sua orientacao e realiza a analise dos certificados enviados.
 
-- PostgreSQL
-- Supabase
+### 2. Organizacao por grupos de horas
 
-### Infra e Deploy
+As horas complementares sao divididas em grupos com:
 
-- Vercel
-- Render
+- numero identificador
+- descricao da categoria
+- carga horaria maxima
 
-## Funcionalidades Principais
+Isso permite que a instituicao mantenha regras claras sobre o aproveitamento de cada tipo de atividade.
 
-- Login por perfil
-- Dashboard do aluno com resumo de certificados
-- Visualizacao de progresso por grupos de horas
-- Envio de certificado com PDF ou imagem
-- Perfil do aluno com imagem local em `localStorage`
-- Dashboard do professor com indicadores operacionais
-- Cadastro de alunos pelo professor
-- Listagem compacta e pesquisavel de alunos
-- Analise de certificados com aprovacao, rejeicao e observacao
-- Validacao parcial de horas (`horasValidadas`)
+### 3. Envio de comprovantes pelo aluno
 
-## Arquitetura do Projeto
+O aluno envia:
+
+- titulo da atividade
+- quantidade de horas solicitadas
+- grupo relacionado
+- comprovante em arquivo
+
+O envio fica registrado com status inicial de **pendente**.
+
+### 4. Analise pedagogica
+
+O professor pode:
+
+- aprovar o certificado
+- rejeitar o certificado
+- reenquadrar o grupo da atividade
+- definir as horas efetivamente validadas
+- registrar observacoes
+
+### 5. Atualizacao do progresso
+
+Quando um certificado e aprovado:
+
+- o total validado passa a compor o progresso do aluno
+- o grupo correspondente e atualizado
+- o historico continua visivel para consulta posterior
+
+## Perfis de Uso
+
+### Aluno
+
+O aluno acessa um ambiente voltado para acompanhamento individual.
+
+Principais recursos:
+
+- painel com resumo de certificados
+- visualizacao do progresso por grupos de horas
+- envio de novos comprovantes
+- consulta da propria lista de certificados
+- abertura do comprovante enviado
+- leitura das observacoes feitas pelo professor
+- visualizacao dos certificados aprovados dentro de cada grupo
+
+### Professor
+
+O professor acessa um ambiente de operacao e acompanhamento da turma.
+
+Principais recursos:
+
+- painel com indicadores gerais
+- cadastro manual de alunos
+- importacao de alunos por planilha
+- listagem pesquisavel da base vinculada
+- analise de certificados recebidos
+- validacao parcial ou total de horas
+- registro de observacoes pedagogicas
+
+## Funcionalidades Atuais
+
+- login por perfil
+- painel do aluno com resumo de situacao
+- painel do professor com visao operacional
+- cadastro de alunos com vinculo ao professor
+- importacao de alunos por planilha `.xlsx`, `.xls` ou `.csv`
+- envio de certificados com PDF ou imagem
+- listagem de certificados do aluno
+- analise de certificados pelo professor
+- aprovacao, rejeicao e reenquadramento de grupo
+- controle de horas validadas
+- visualizacao de certificados aprovados por grupo
+- armazenamento persistente dos comprovantes
+
+## Fluxos Principais
+
+### Fluxo do Aluno
+
+1. O aluno entra no sistema.
+2. Consulta o painel com o resumo da propria situacao.
+3. Envia um novo certificado para analise.
+4. Acompanha o status do envio.
+5. Verifica horas aprovadas e certificados por grupo.
+
+### Fluxo do Professor
+
+1. O professor acessa o painel institucional.
+2. Cadastra alunos manualmente ou por planilha.
+3. Consulta a lista de alunos vinculados.
+4. Abre a fila de certificados recebidos.
+5. Analisa cada comprovante e registra a decisao.
+
+## Regras de Negocio Ja Aplicadas
+
+- o sistema distingue perfis de `ALUNO` e `PROFESSOR`
+- o aluno entra vinculado a um professor
+- cada certificado pertence a um aluno e a um grupo
+- o professor so analisa certificados dos alunos sob sua responsabilidade
+- as horas validadas nao podem exceder as horas solicitadas
+- o certificado pode ficar em `PENDENTE`, `APROVADO` ou `REJEITADO`
+- o progresso do aluno considera apenas certificados aprovados
+- a importacao de planilha valida colunas obrigatorias, serie e duplicidade de e-mail
+
+## Experiencia de Uso
+
+O projeto foi construido com foco em clareza operacional e leitura rapida.
+
+Alguns pontos importantes da experiencia:
+
+- navegacao separada por perfil
+- cards e indicadores para leitura imediata
+- filtros e buscas nas telas operacionais
+- uso de status visuais para pendencias, aprovacoes e rejeicoes
+- acesso direto aos comprovantes
+- feedback de importacao com resumo e ocorrencias por linha
+
+## Estrutura Funcional do Projeto
 
 ```text
 gestao-horas-complementares/
-|-- client/ 
-|   |-- public/
+|-- client/
 |   |-- src/
-|   |   |-- api/ 
+|   |   |-- api/
 |   |   |-- assets/
 |   |   |-- components/
 |   |   |-- pages/
 |   |   `-- utils/
-|   |-- package.json
 |   `-- vercel.json
 |
 |-- server/
@@ -104,252 +195,111 @@ gestao-horas-complementares/
 |   |   |-- migrations/
 |   |   |-- schema.prisma
 |   |   `-- seed.js
-|   |-- uploads/
-|   |-- index.js
-|   `-- package.json
+|   `-- index.js
 |
 `-- README.md
 ```
 
-## Modulos do Sistema
-
-### Aluno
-
-- `/dashboard`
-- `/grupos`
-- `/enviar`
-- `/perfil`
-
-### Professor
-
-- `/professor`
-- `/professor/alunos`
-- `/professor/certificados`
-
-## Estrutura de Dados
+## Estrutura Conceitual dos Dados
 
 ### Usuario
 
-- `role`: `ALUNO` ou `PROFESSOR`
-- professor pode possuir varios alunos vinculados
-- aluno envia certificados
-- professor pode analisar certificados
+- representa aluno ou professor
+- controla nome, e-mail, serie e perfil
+- permite relacao entre professor e alunos
 
 ### Grupo
 
-- representa uma categoria de horas complementares
-- possui `numero`, `descricao` e `horasMaximas`
+- representa a categoria de horas complementares
+- define descricao e limite maximo de horas
 
 ### Certificado
 
-- pertence a um aluno
-- pertence a um grupo
-- possui status `PENDENTE`, `APROVADO` ou `REJEITADO`
-- pode armazenar `horasValidadas`
-- pode receber `observacaoProfessor`
+- registra o envio feito pelo aluno
+- guarda status da analise
+- armazena comprovante e metadados
+- registra grupo, horas solicitadas e horas validadas
 
-## Endpoints Relevantes
+## Importacao por Planilha
 
-### Base
+O modulo de importacao foi pensado para atender turmas maiores.
 
-- `POST /cadastro`
-- `POST /login`
-- `GET /grupos`
+Formato esperado:
 
-### Aluno
+- `nome`
+- `email`
+- `serie`
+- `senha`
 
-- `POST /enviar-certificado`
-- `GET /grupos-progresso/:alunoId`
-- `GET /certificados-resumo/:alunoId`
+Series aceitas:
 
-### Professor
+- `1a Serie`
+- `2a Serie`
+- `3a Serie`
 
-- `GET /professor/dashboard/:professorId`
-- `GET /professor/alunos/:professorId`
-- `POST /professor/alunos`
-- `GET /professor/certificados/:professorId`
-- `PATCH /professor/certificados/:certificadoId`
+Ao final da importacao, o sistema retorna:
 
-## Como Executar Localmente
+- total de linhas lidas
+- quantos alunos foram criados
+- quantos registros foram ignorados
+- lista de ocorrencias para correcao
 
-### Pre-requisitos
+## Contexto de Uso Institucional
 
-- Node.js 18+
-- npm
-- PostgreSQL local ou remoto
-- Git
+Este projeto pode ser utilizado como base para:
 
-### 1. Clone o repositorio
+- escolas tecnicas
+- cursos profissionalizantes
+- coordenacoes pedagogicas
+- controle de atividades complementares por turma
+- acompanhamento de carga horaria extracurricular por aluno
 
-```bash
-git clone <url-do-repositorio>
-cd gestao-horas-complementares
-```
+Ele foi estruturado para favorecer:
 
-### 2. Configure o backend
+- transparencia
+- rastreabilidade
+- organizacao por responsabilidades
+- consulta historica das decisoes
 
-```bash
-cd server
-npm install
-```
-
-Crie `server/.env`:
-
-```env
-DATABASE_URL="postgresql://usuario:senha@host:5432/banco?schema=public"
-PORT=3001
-```
-
-Para Supabase com pooler:
-
-```env
-DATABASE_URL="postgresql://postgres.<project-ref>:<db-password>@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
-PORT=3001
-```
-
-### 3. Gere o Prisma Client e aplique as migrations
-
-```bash
-npm run build
-npx prisma migrate deploy
-```
-
-Para ambiente local de desenvolvimento, tambem pode usar:
-
-```bash
-npx prisma migrate dev
-```
-
-### 4. Popule o banco com dados iniciais
-
-```bash
-npx prisma db seed
-```
-
-### 5. Configure o frontend
-
-```bash
-cd ../client
-npm install
-```
-
-Crie `client/.env`:
-
-```env
-VITE_API_URL="http://localhost:3001"
-```
-
-### 6. Rode o projeto
-
-Backend:
-
-```bash
-cd server
-npm run start
-```
-
-Frontend:
-
-```bash
-cd client
-npm run dev
-```
-
-## Credenciais de Demonstracao
-
-Criadas pelo seed:
-
-- `professor@teste.com` / `123456`
-- `aluno@teste.com` / `123456`
-
-## Scripts Disponiveis
-
-### Backend
-
-- `npm run dev`
-- `npm run start`
-- `npm run build`
-- `npm run render-build`
+## Base Tecnologica
 
 ### Frontend
 
-- `npm run dev`
-- `npm run build`
-- `npm run preview`
-- `npm run lint`
+- React
+- Vite
+- React Router
+- TanStack Query
+- Axios
+- Tailwind CSS
 
-## Uploads e Armazenamento
+### Backend
 
-No estado atual, os arquivos de certificados sao armazenados localmente em:
+- Node.js
+- Express
+- Prisma ORM
+- multer
+- xlsx
 
-```text
-server/uploads/
-```
+### Banco de Dados
 
-Formatos aceitos:
+- PostgreSQL
 
-- PDF
-- JPG
-- JPEG
-- PNG
-- WEBP
+## Evolucao do Produto
 
-Observacao:
+O sistema ja cobre o fluxo principal institucional, mas ainda pode evoluir em frentes como:
 
-- para producao, o ideal e mover o upload para um storage dedicado
+- autenticacao mais robusta
+- relatorios gerenciais
+- exportacao de dados
+- trilha de auditoria mais detalhada
+- notificacoes de pendencias
+- dashboards por coordenacao ou curso
 
-## Deploy
+## Observacoes
 
-### Frontend na Vercel
-
-Configuracao recomendada:
-
-- Root Directory: `client`
-- Framework Preset: `Vite`
-- Build Command: `npm run build`
-- Output Directory: `dist`
-
-Variavel de ambiente:
-
-```env
-VITE_API_URL="https://seu-backend.onrender.com"
-```
-
-### Backend no Render
-
-Configuracao recomendada:
-
-- Root Directory: `server`
-- Build Command: `npm install && npx prisma generate && npx prisma migrate deploy`
-- Start Command: `node index.js`
-
-Variaveis:
-
-- `DATABASE_URL`
-- `PORT` opcional
-
-## Qualidade e Organizacao
-
-- frontend com componentes compartilhados e paginas separadas por perfil
-- backend com Prisma e migrations versionadas
-- seed de banco para ambiente de demonstracao
-- rotas separadas por responsabilidade
-- interface mobile com menu hamburger e atalhos contextuais
-
-## Melhorias Futuras
-
-- hash de senha e autenticacao mais robusta
-- JWT e controle de sessao real
-- storage externo para arquivos
-- filtros avancados em certificados
-- relatorios exportaveis
-- testes automatizados
-
-## Observacoes Importantes
-
-- o projeto usa senha em texto puro apenas para fins educacionais
-- antes de producao, o fluxo de autenticacao precisa ser endurecido
-- o backend depende de consistencia entre `schema.prisma`, migrations e `prisma generate`
+- o projeto foi pensado para uso educacional e institucional
+- o fluxo atual privilegia clareza operacional e demonstracao funcional
+- a arquitetura separa bem os modulos de aluno, professor, grupos e certificados
 
 ## Licenca
 
