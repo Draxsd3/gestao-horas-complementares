@@ -29,7 +29,9 @@ export default function EnviarCertificado() {
             headers: { 'Content-Type': 'multipart/form-data' }
         }),
         onSuccess: () => {
-            queryClient.invalidateQueries(['grupos-progresso']);
+            queryClient.invalidateQueries({ queryKey: ['grupos-progresso'] });
+            queryClient.invalidateQueries({ queryKey: ['certificados-resumo'] });
+            queryClient.invalidateQueries({ queryKey: ['aluno-certificados'] });
             alert('Certificado enviado com sucesso! Agora e so aguardar a aprovacao.');
             navigate('/dashboard');
         },
@@ -71,6 +73,7 @@ export default function EnviarCertificado() {
                 hideHeading
                 navItems={[
                     { label: 'Home', onClick: () => navigate('/dashboard') },
+                    { label: 'Certificados', onClick: () => navigate('/certificados') },
                     { label: 'Grupos de horas', onClick: () => navigate('/grupos') },
                     { label: 'Perfil', onClick: () => navigate('/perfil') },
                 ]}

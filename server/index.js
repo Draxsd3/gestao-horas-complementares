@@ -309,6 +309,64 @@ app.get('/certificados-resumo/:alunoId', async (req, res) => {
     }
 });
 
+app.get('/alunos/:alunoId/certificados', async (req, res) => {
+    const alunoId = parseId(req.params.alunoId);
+
+    if (!alunoId) {
+        return res.status(400).json({ error: 'Aluno invalido.' });
+    }
+
+    try {
+        const aluno = await prisma.usuario.findFirst({
+            where: {
+                id: alunoId,
+                role: 'ALUNO'
+            }
+        });
+
+        if (!aluno) {
+            return res.status(404).json({ error: 'Aluno nao encontrado.' });
+        }
+
+        const certificados = await prisma.certificado.findMany({
+            where: { alunoId },
+            include: {
+                grupo: {
+                    select: {
+                        id: true,
+                        numero: true,
+                        descricao: true
+                    }
+                },
+                analisadoPor: {
+                    select: {
+                        id: true,
+                        nome: true
+                    }
+                }
+            }
+        });
+
+        const certificadosOrdenados = certificados
+            .map((certificado) => serializeCertificado(certificado))
+            .sort((a, b) => {
+                const weightA = certificateStatusWeight[a.status] ?? 99;
+                const weightB = certificateStatusWeight[b.status] ?? 99;
+
+                if (weightA !== weightB) {
+                    return weightA - weightB;
+                }
+
+                return new Date(b.dataEnvio).getTime() - new Date(a.dataEnvio).getTime();
+            });
+
+        res.json(certificadosOrdenados);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erro ao carregar certificados do aluno.' });
+    }
+});
+
 app.get('/professor/dashboard/:professorId', async (req, res) => {
     const professorId = parseId(req.params.professorId);
 

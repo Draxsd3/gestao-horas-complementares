@@ -162,6 +162,7 @@ export default function Dashboard() {
                 hideHeading
                 navItems={[
                     { label: 'Home', onClick: () => navigate('/dashboard') },
+                    { label: 'Certificados', onClick: () => navigate('/certificados') },
                     { label: 'Grupos de horas', onClick: () => navigate('/grupos') },
                     { label: 'Perfil', onClick: () => navigate('/perfil') },
                 ]}
