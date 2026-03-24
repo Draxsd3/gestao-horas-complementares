@@ -28,6 +28,13 @@ const certificateStatusWeight = {
     APROVADO: 1,
     REJEITADO: 2
 };
+const mimeTypeByExtension = {
+    '.pdf': 'application/pdf',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.webp': 'image/webp'
+};
 
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
@@ -37,9 +44,51 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(uploadsDir));
 
+app.get('/uploads/:fileName', async (req, res) => {
+    const fileName = path.basename(req.params.fileName || '');
+
+    if (!fileName) {
+        return res.status(404).send('Arquivo nao encontrado.');
+    }
+
+    const localFilePath = path.join(uploadsDir, fileName);
+
+    if (fs.existsSync(localFilePath)) {
+        return res.sendFile(localFilePath);
+    }
+
+    try {
+        const certificado = await prisma.certificado.findFirst({
+            where: {
+                OR: buildFileLookupFilters(fileName)
+            },
+            select: {
+                arquivoConteudo: true,
+                arquivoMimeType: true,
+                arquivoNomeOriginal: true
+            }
+        });
+
+        if (!certificado?.arquivoConteudo) {
+            return res.status(404).send('Arquivo nao encontrado.');
+        }
+
+        res.setHeader('Content-Type', certificado.arquivoMimeType || getMimeTypeFromFileName(fileName));
+        res.setHeader('Content-Disposition', `inline; filename="${sanitizeFileName(certificado.arquivoNomeOriginal || fileName)}"`);
+        return res.end(Buffer.from(certificado.arquivoConteudo));
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Erro ao abrir arquivo.');
+    }
+});
+
 function parseId(value) {
     const parsed = Number(value);
     return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getMimeTypeFromFileName(fileName) {
+    return mimeTypeByExtension[path.extname(fileName).toLowerCase()] || 'application/octet-stream';
 }
 
 function normalizeEmail(email) {
@@ -51,11 +100,82 @@ function normalizeSerie(serie) {
     return normalizedSerie || null;
 }
 
+function sanitizeFileName(fileName) {
+    const parsedName = path.parse(fileName || 'arquivo');
+    const baseName = parsedName.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9._-]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        || 'arquivo';
+    const extension = parsedName.ext
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9.]+/g, '');
+
+    return `${baseName}${extension}`;
+}
+
+function createStoredFileName(originalName) {
+    return `${Date.now()}-${sanitizeFileName(originalName)}`;
+}
+
 function serializeCertificado(certificado) {
     return {
         ...certificado,
         arquivoUrl: `/uploads/${path.basename(certificado.arquivoUrl)}`
     };
+}
+
+function buildFileLookupFilters(fileName) {
+    return [
+        { arquivoUrl: fileName },
+        { arquivoUrl: { endsWith: `/${fileName}` } },
+        { arquivoUrl: { endsWith: `\\${fileName}` } }
+    ];
+}
+
+async function syncStoredUploadsToDatabase() {
+    try {
+        const certificados = await prisma.certificado.findMany({
+            where: {
+                arquivoConteudo: null
+            },
+            select: {
+                id: true,
+                arquivoUrl: true,
+                arquivoNomeOriginal: true,
+                arquivoMimeType: true
+            }
+        });
+
+        for (const certificado of certificados) {
+            const fileName = path.basename(certificado.arquivoUrl || '');
+
+            if (!fileName) {
+                continue;
+            }
+
+            const filePath = path.join(uploadsDir, fileName);
+
+            if (!fs.existsSync(filePath)) {
+                continue;
+            }
+
+            const buffer = await fs.promises.readFile(filePath);
+
+            await prisma.certificado.update({
+                where: { id: certificado.id },
+                data: {
+                    arquivoConteudo: buffer,
+                    arquivoMimeType: certificado.arquivoMimeType || getMimeTypeFromFileName(fileName),
+                    arquivoNomeOriginal: certificado.arquivoNomeOriginal || fileName
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao sincronizar uploads antigos com o banco.', error);
+    }
 }
 
 async function buscarProfessor(professorId) {
@@ -158,17 +278,8 @@ app.post('/login', async (req, res) => {
     }
 });
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
-});
-
 const upload = multer({
-    storage,
+    storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
         if (allowedFileTypes.has(file.mimetype)) {
             cb(null, true);
@@ -216,13 +327,18 @@ app.post('/enviar-certificado', (req, res, next) => {
             return res.status(404).json({ error: 'Aluno nao encontrado.' });
         }
 
+        const storedFileName = createStoredFileName(req.file.originalname);
+
         const novoCertificado = await prisma.certificado.create({
             data: {
                 titulo,
                 horas: Number(horas),
                 alunoId: alunoIdNumerico,
                 grupoId: grupoIdNumerico,
-                arquivoUrl: req.file.path,
+                arquivoUrl: storedFileName,
+                arquivoNomeOriginal: req.file.originalname,
+                arquivoMimeType: req.file.mimetype,
+                arquivoConteudo: req.file.buffer,
                 status: 'PENDENTE'
             }
         });
@@ -712,4 +828,5 @@ app.patch('/professor/certificados/:certificadoId', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
+    syncStoredUploadsToDatabase();
 });
