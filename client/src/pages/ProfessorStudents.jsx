@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { GraduationCap, Mail, Search, UserPlus2, UsersRound } from 'lucide-react';
+import { Download, FileUp, GraduationCap, Mail, Search, Upload, UserPlus2, UsersRound } from 'lucide-react';
 import api from '../api/api';
 import ProfessorLayout from '../components/ProfessorLayout';
 import TransitionLoader from '../components/TransitionLoader';
@@ -67,6 +67,8 @@ export default function ProfessorStudents() {
     const [searchTerm, setSearchTerm] = useState('');
     const [serieFilter, setSerieFilter] = useState('TODAS');
     const [currentPage, setCurrentPage] = useState(1);
+    const [arquivoImportacao, setArquivoImportacao] = useState(null);
+    const [importResult, setImportResult] = useState(null);
 
     const { data: alunos, isLoading, error } = useQuery({
         queryKey: ['professor-alunos', usuario?.id],
@@ -81,6 +83,7 @@ export default function ProfessorStudents() {
         mutationFn: (payload) => api.post('/professor/alunos', payload),
         onSuccess: () => {
             setNovoAluno({ nome: '', email: '', serie: SERIE_OPTIONS[0], senha: '' });
+            setImportResult(null);
             queryClient.invalidateQueries({ queryKey: ['professor-dashboard', usuario.id] });
             queryClient.invalidateQueries({ queryKey: ['professor-alunos', usuario.id] });
             alert('Aluno cadastrado e vinculado ao professor.');
@@ -90,12 +93,61 @@ export default function ProfessorStudents() {
         }
     });
 
+    const importarAlunosMutation = useMutation({
+        mutationFn: (formData) => api.post('/professor/alunos/importar', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        }),
+        onSuccess: (response) => {
+            setArquivoImportacao(null);
+            setImportResult(response.data);
+            queryClient.invalidateQueries({ queryKey: ['professor-dashboard', usuario.id] });
+            queryClient.invalidateQueries({ queryKey: ['professor-alunos', usuario.id] });
+            alert(`Importacao concluida: ${response.data.createdCount} aluno(s) criado(s).`);
+        },
+        onError: (errorResponse) => {
+            setImportResult(null);
+            alert(errorResponse.response?.data?.error || 'Erro ao importar planilha.');
+        }
+    });
+
     const handleCadastrarAluno = (event) => {
         event.preventDefault();
         cadastrarAlunoMutation.mutate({
             ...novoAluno,
             professorId: usuario.id
         });
+    };
+
+    const handleImportarAlunos = (event) => {
+        event.preventDefault();
+
+        if (!arquivoImportacao) {
+            alert('Selecione uma planilha para importar.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('professorId', usuario.id);
+        formData.append('arquivo', arquivoImportacao);
+        importarAlunosMutation.mutate(formData);
+    };
+
+    const handleBaixarModelo = () => {
+        const csvContent = [
+            'nome,email,serie,senha',
+            'Aluno Exemplo,aluno.exemplo@escola.com,1a Serie,123456',
+            'Maria da Silva,maria.silva@escola.com,2a Serie,abc123'
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'modelo-importacao-alunos.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
     };
 
     const alunosFiltrados = (alunos || []).filter((aluno) => {
@@ -137,6 +189,124 @@ export default function ProfessorStudents() {
                 <SummaryBadge label="Alunos exibidos" value={alunosFiltrados.length} />
                 <SummaryBadge label="Pendencias" value={totalPendentes} />
                 <SummaryBadge label="Horas validadas" value={`${totalHoras}h`} />
+            </section>
+
+            <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+                <form
+                    onSubmit={handleImportarAlunos}
+                    className="rounded-[2rem] border border-[var(--line)] bg-white p-8 shadow-[0_24px_56px_rgba(41,47,56,0.1)]"
+                >
+                    <h2 className="flex items-center gap-3 text-2xl font-bold text-[var(--ink)]">
+                        <Upload className="text-[var(--brand-red)]" />
+                        Importar alunos por planilha
+                    </h2>
+                    <p className="mt-2 text-sm text-[var(--muted)]">
+                        Envie uma planilha `.xlsx`, `.xls` ou `.csv` com as colunas `nome`, `email`, `serie` e `senha`.
+                    </p>
+
+                    <div className="mt-6 flex flex-wrap gap-3">
+                        <button
+                            type="button"
+                            onClick={handleBaixarModelo}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-[var(--line)] px-4 py-3 text-sm font-semibold text-[var(--ink)] transition-colors hover:border-[var(--brand-red)] hover:text-[var(--brand-red)]"
+                        >
+                            <Download size={18} />
+                            Baixar modelo
+                        </button>
+                    </div>
+
+                    <div className="mt-6 rounded-[1.75rem] border-2 border-dashed border-[var(--line-strong)] bg-[var(--panel-soft)] p-6 transition-colors hover:border-[var(--brand-red)]">
+                        <label className="flex cursor-pointer flex-col gap-3 text-sm text-[var(--muted)]">
+                            <span className="font-semibold text-[var(--ink)]">Planilha de alunos</span>
+                            <span>Use as series `1a Serie`, `2a Serie` ou `3a Serie`.</span>
+                            <input
+                                type="file"
+                                accept=".xlsx,.xls,.csv"
+                                className="w-full text-sm text-[var(--muted)] file:mr-4 file:rounded-full file:border-0 file:bg-[var(--brand-red)] file:px-4 file:py-2 file:font-semibold file:text-white"
+                                onChange={(event) => setArquivoImportacao(event.target.files?.[0] || null)}
+                            />
+                            {arquivoImportacao ? (
+                                <span className="text-sm font-medium text-[var(--ink)]">
+                                    Arquivo selecionado: {arquivoImportacao.name}
+                                </span>
+                            ) : null}
+                        </label>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={importarAlunosMutation.isPending}
+                        className="mt-8 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand-red)] font-bold text-white transition-colors hover:bg-[var(--brand-red-dark)] disabled:cursor-not-allowed disabled:bg-[#b8b8bb]"
+                    >
+                        {importarAlunosMutation.isPending ? 'Importando...' : <><FileUp size={18} /> Importar planilha</>}
+                    </button>
+
+                    {importResult ? (
+                        <div className="mt-6 rounded-[1.5rem] border border-[var(--line)] bg-[var(--panel-soft)] p-5">
+                            <div className="grid gap-3 md:grid-cols-3">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Linhas lidas</p>
+                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{importResult.totalRows}</strong>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Criados</p>
+                                    <strong className="mt-2 block text-2xl font-bold text-[#2f8f57]">{importResult.createdCount}</strong>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Ignorados</p>
+                                    <strong className="mt-2 block text-2xl font-bold text-[var(--brand-red)]">{importResult.skippedCount}</strong>
+                                </div>
+                            </div>
+
+                            {importResult.errors?.length ? (
+                                <div className="mt-5">
+                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Ocorrencias</p>
+                                    <div className="mt-3 space-y-2">
+                                        {importResult.errors.slice(0, 8).map((errorItem, index) => (
+                                            <div key={`${index}-${errorItem}`} className="rounded-2xl border border-[var(--brand-red)] bg-[var(--brand-red-soft)] px-4 py-3 text-sm text-[var(--brand-red)]">
+                                                {errorItem}
+                                            </div>
+                                        ))}
+                                        {importResult.errors.length > 8 ? (
+                                            <p className="text-sm text-[var(--muted)]">
+                                                E mais {importResult.errors.length - 8} ocorrencia(s) na importacao.
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
+                </form>
+
+                <div className="rounded-[2rem] border border-white/70 bg-[linear-gradient(145deg,#4b545f_0%,#343b44_100%)] p-8 text-white shadow-[0_28px_60px_rgba(36,42,50,0.24)]">
+                    <span className="inline-flex text-xs font-semibold uppercase tracking-[0.28em] text-[#ffd7dc]">
+                        Importacao em lote
+                    </span>
+                    <div className="mt-8 grid gap-4">
+                        <div className="rounded-2xl border border-white/10 bg-white/6 p-5">
+                            <UsersRound className="mb-3 text-[#ffb4bc]" size={24} />
+                            <h3 className="font-bold">Cadastro mais rapido</h3>
+                            <p className="mt-2 text-sm leading-6 text-[#d8dde3]">
+                                Ideal para subir turmas inteiras de uma vez sem repetir o cadastro manual aluno por aluno.
+                            </p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/6 p-5">
+                            <GraduationCap className="mb-3 text-[#ffb4bc]" size={24} />
+                            <h3 className="font-bold">Validacao por linha</h3>
+                            <p className="mt-2 text-sm leading-6 text-[#d8dde3]">
+                                O sistema informa quais linhas entraram e quais precisam de correcao por e-mail duplicado ou serie invalida.
+                            </p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/6 p-5">
+                            <Mail className="mb-3 text-[#ffb4bc]" size={24} />
+                            <h3 className="font-bold">Acesso inicial definido</h3>
+                            <p className="mt-2 text-sm leading-6 text-[#d8dde3]">
+                                Cada linha ja pode trazer a senha inicial do aluno para o primeiro acesso ao sistema.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section className="rounded-[1.8rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
