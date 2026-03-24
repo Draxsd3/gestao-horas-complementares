@@ -5,6 +5,7 @@ const baseURL = configuredBaseURL.replace(/^"+|"+$/g, '').replace(/\/+$/, '');
 
 const api = axios.create({
     baseURL,
+    timeout: 15000,
 });
 
 export default api;

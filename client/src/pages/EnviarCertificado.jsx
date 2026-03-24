@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api/api';
 import AppFooter from '../components/AppFooter';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Upload, Send, FileUp, BadgeCheck } from 'lucide-react';
 import InstitutionalHeader from '../components/InstitutionalHeader';
 import TransitionLoader from '../components/TransitionLoader';
@@ -29,7 +29,9 @@ export default function EnviarCertificado() {
             headers: { 'Content-Type': 'multipart/form-data' }
         }),
         onSuccess: () => {
-            queryClient.invalidateQueries(['grupos-progresso']);
+            queryClient.invalidateQueries({ queryKey: ['grupos-progresso'] });
+            queryClient.invalidateQueries({ queryKey: ['certificados-resumo'] });
+            queryClient.invalidateQueries({ queryKey: ['aluno-certificados'] });
             alert('Certificado enviado com sucesso! Agora e so aguardar a aprovacao.');
             navigate('/dashboard');
         },
@@ -57,13 +59,11 @@ export default function EnviarCertificado() {
     };
 
     if (!usuario) {
-        Promise.resolve().then(() => navigate('/'));
-        return null;
+        return <Navigate to="/" replace />;
     }
 
     if (usuario.role !== 'ALUNO') {
-        Promise.resolve().then(() => navigate(getHomeRoute(usuario.role)));
-        return null;
+        return <Navigate to={getHomeRoute(usuario.role)} replace />;
     }
 
     return (
@@ -73,6 +73,7 @@ export default function EnviarCertificado() {
                 hideHeading
                 navItems={[
                     { label: 'Home', onClick: () => navigate('/dashboard') },
+                    { label: 'Certificados', onClick: () => navigate('/certificados') },
                     { label: 'Grupos de horas', onClick: () => navigate('/grupos') },
                     { label: 'Perfil', onClick: () => navigate('/perfil') },
                 ]}

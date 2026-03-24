@@ -5,7 +5,7 @@ import TransitionLoader from '../components/TransitionLoader';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, Clock3, BadgeCheck, BadgeX } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { getHomeRoute, getStoredUser } from '../utils/session';
 
 function OverviewCard({ currentHours, totalHours }) {
@@ -140,13 +140,11 @@ export default function Dashboard() {
     };
 
     if (!usuario) {
-        Promise.resolve().then(() => navigate('/'));
-        return null;
+        return <Navigate to="/" replace />;
     }
 
     if (usuario.role !== 'ALUNO') {
-        Promise.resolve().then(() => navigate(getHomeRoute(usuario.role)));
-        return null;
+        return <Navigate to={getHomeRoute(usuario.role)} replace />;
     }
 
     if (loadingGrupos || loadingResumo) return <TransitionLoader label="Carregando painel..." />;
@@ -164,6 +162,7 @@ export default function Dashboard() {
                 hideHeading
                 navItems={[
                     { label: 'Home', onClick: () => navigate('/dashboard') },
+                    { label: 'Certificados', onClick: () => navigate('/certificados') },
                     { label: 'Grupos de horas', onClick: () => navigate('/grupos') },
                     { label: 'Perfil', onClick: () => navigate('/perfil') },
                 ]}

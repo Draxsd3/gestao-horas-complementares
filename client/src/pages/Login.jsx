@@ -2,6 +2,7 @@ import api from '../api/api';
 import { useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import TransitionLoader from '../components/TransitionLoader';
 import etecRegistro from '../assets/etec_registro.png';
 import logoGovernoSP from '../assets/logo-governo-do-estado-sp.png';
@@ -11,18 +12,63 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
+
+    const preloadUserData = (usuario) => {
+        if (usuario.role === 'PROFESSOR') {
+            queryClient.prefetchQuery({
+                queryKey: ['professor-dashboard', usuario.id],
+                queryFn: async () => {
+                    const response = await api.get(`/professor/dashboard/${usuario.id}`);
+                    return response.data;
+                }
+            });
+            return;
+        }
+
+        queryClient.prefetchQuery({
+            queryKey: ['grupos-progresso', usuario.id],
+            queryFn: async () => {
+                const response = await api.get(`/grupos-progresso/${usuario.id}`);
+                return response.data;
+            }
+        });
+
+        queryClient.prefetchQuery({
+            queryKey: ['certificados-resumo', usuario.id],
+            queryFn: async () => {
+                const response = await api.get(`/certificados-resumo/${usuario.id}`);
+                return response.data;
+            }
+        });
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        const normalizedEmail = email.trim();
+        const normalizedSenha = senha.trim();
+
+        if (!normalizedEmail || !normalizedSenha) {
+            setErrorMessage('Informe e-mail e senha para acessar.');
+            return;
+        }
+
         try {
+            setErrorMessage('');
             setIsTransitioning(true);
-            const response = await api.post('/login', { email, senha });
+            const response = await api.post('/login', {
+                email: normalizedEmail,
+                senha: normalizedSenha
+            });
+
             localStorage.setItem('usuario', JSON.stringify(response.data));
-            setTimeout(() => navigate(getHomeRoute(response.data.role)), 450);
+            preloadUserData(response.data);
+            navigate(getHomeRoute(response.data.role), { replace: true });
         } catch (error) {
             setIsTransitioning(false);
-            alert('Erro ao logar: ' + (error.response?.data?.error || 'Erro interno'));
+            setErrorMessage(error.response?.data?.error || 'Erro ao realizar login.');
         }
     };
 
@@ -66,8 +112,13 @@ export default function Login() {
                                     type="email"
                                     placeholder="E-mail"
                                     className="h-14 w-full rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] py-2 pl-12 pr-4 text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        if (errorMessage) setErrorMessage('');
+                                    }}
                                     value={email}
+                                    autoComplete="username"
+                                    disabled={isTransitioning}
                                 />
                             </div>
 
@@ -77,16 +128,28 @@ export default function Login() {
                                     type="password"
                                     placeholder="Senha"
                                     className="h-14 w-full rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] py-2 pl-12 pr-4 text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
-                                    onChange={(e) => setSenha(e.target.value)}
+                                    onChange={(e) => {
+                                        setSenha(e.target.value);
+                                        if (errorMessage) setErrorMessage('');
+                                    }}
                                     value={senha}
+                                    autoComplete="current-password"
+                                    disabled={isTransitioning}
                                 />
                             </div>
 
+                            {errorMessage ? (
+                                <div className="rounded-2xl border border-[var(--brand-red)] bg-[var(--brand-red-soft)] px-4 py-3 text-sm font-medium text-[var(--brand-red)]">
+                                    {errorMessage}
+                                </div>
+                            ) : null}
+
                             <button
                                 type="submit"
-                                className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--brand-red)] font-bold text-white transition-colors hover:bg-[var(--brand-red-dark)]"
+                                disabled={isTransitioning}
+                                className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--brand-red)] font-bold text-white transition-colors hover:bg-[var(--brand-red-dark)] disabled:cursor-not-allowed disabled:bg-[#b8b8bb]"
                             >
-                                Entrar
+                                {isTransitioning ? 'Entrando...' : 'Entrar'}
                             </button>
                         </div>
                     </form>

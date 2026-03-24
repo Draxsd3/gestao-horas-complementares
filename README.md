@@ -88,10 +88,10 @@ O sistema separa claramente os fluxos de:
 
 ```text
 gestao-horas-complementares/
-|-- client/
+|-- client/ 
 |   |-- public/
 |   |-- src/
-|   |   |-- api/
+|   |   |-- api/ 
 |   |   |-- assets/
 |   |   |-- components/
 |   |   |-- pages/

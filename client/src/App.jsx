@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import StudentCertificates from './pages/StudentCertificates';
 import EnviarCertificado from './pages/EnviarCertificado';
 import Perfil from './pages/Perfil';
 import GruposHoras from './pages/GruposHoras';
@@ -13,6 +14,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/certificados" element={<StudentCertificates />} />
       <Route path="/professor" element={<ProfessorDashboard />} />
       <Route path="/professor/alunos" element={<ProfessorStudents />} />
       <Route path="/professor/certificados" element={<ProfessorCertificates />} />

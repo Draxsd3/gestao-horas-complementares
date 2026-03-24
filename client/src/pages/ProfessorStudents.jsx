@@ -7,6 +7,7 @@ import TransitionLoader from '../components/TransitionLoader';
 import { getStoredUser } from '../utils/session';
 
 const ROWS_PER_PAGE = 8;
+const SERIE_OPTIONS = ['1a Serie', '2a Serie', '3a Serie'];
 
 function SummaryBadge({ label, value }) {
     return (
@@ -24,6 +25,9 @@ function MobileStudentRow({ aluno }) {
                 <div>
                     <h3 className="text-base font-bold text-[var(--ink)]">{aluno.nome}</h3>
                     <p className="mt-1 text-sm text-[var(--muted)]">{aluno.email}</p>
+                    <span className="mt-3 inline-flex rounded-full bg-[var(--brand-red-soft)] px-3 py-1 text-xs font-semibold text-[var(--brand-red)]">
+                        {aluno.serie || 'Sem serie'}
+                    </span>
                 </div>
                 <span className="rounded-full bg-[var(--panel-soft)] px-3 py-1 text-xs font-semibold text-[var(--muted)]">
                     {aluno.totalCertificados} cert.
@@ -57,9 +61,11 @@ export default function ProfessorStudents() {
     const [novoAluno, setNovoAluno] = useState({
         nome: '',
         email: '',
+        serie: SERIE_OPTIONS[0],
         senha: ''
     });
     const [searchTerm, setSearchTerm] = useState('');
+    const [serieFilter, setSerieFilter] = useState('TODAS');
     const [currentPage, setCurrentPage] = useState(1);
 
     const { data: alunos, isLoading, error } = useQuery({
@@ -74,7 +80,7 @@ export default function ProfessorStudents() {
     const cadastrarAlunoMutation = useMutation({
         mutationFn: (payload) => api.post('/professor/alunos', payload),
         onSuccess: () => {
-            setNovoAluno({ nome: '', email: '', senha: '' });
+            setNovoAluno({ nome: '', email: '', serie: SERIE_OPTIONS[0], senha: '' });
             queryClient.invalidateQueries({ queryKey: ['professor-dashboard', usuario.id] });
             queryClient.invalidateQueries({ queryKey: ['professor-alunos', usuario.id] });
             alert('Aluno cadastrado e vinculado ao professor.');
@@ -94,8 +100,13 @@ export default function ProfessorStudents() {
 
     const alunosFiltrados = (alunos || []).filter((aluno) => {
         const term = searchTerm.trim().toLowerCase();
-        if (!term) return true;
-        return aluno.nome.toLowerCase().includes(term) || aluno.email.toLowerCase().includes(term);
+        const matchesSerie = serieFilter === 'TODAS' || aluno.serie === serieFilter;
+        const matchesSearch = !term
+            || aluno.nome.toLowerCase().includes(term)
+            || aluno.email.toLowerCase().includes(term)
+            || (aluno.serie || '').toLowerCase().includes(term);
+
+        return matchesSerie && matchesSearch;
     });
 
     const totalPages = Math.max(1, Math.ceil(alunosFiltrados.length / ROWS_PER_PAGE));
@@ -135,21 +146,37 @@ export default function ProfessorStudents() {
                         <h2 className="mt-2 text-2xl font-bold text-[var(--ink)]">Lista compacta e pesquisavel</h2>
                     </div>
 
-                    <label className="flex w-full items-center overflow-hidden rounded-full border border-[var(--line)] bg-[var(--panel-soft)] lg:max-w-md">
-                        <span className="flex h-12 w-12 items-center justify-center text-[var(--muted)]">
-                            <Search size={18} />
-                        </span>
-                        <input
-                            type="text"
-                            value={searchTerm}
+                    <div className="flex w-full flex-col gap-3 lg:max-w-2xl lg:flex-row">
+                        <label className="flex flex-1 items-center overflow-hidden rounded-full border border-[var(--line)] bg-[var(--panel-soft)]">
+                            <span className="flex h-12 w-12 items-center justify-center text-[var(--muted)]">
+                                <Search size={18} />
+                            </span>
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(event) => {
+                                    setSearchTerm(event.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                placeholder="Buscar por nome, e-mail ou serie"
+                                className="h-12 flex-1 bg-transparent pr-4 text-sm text-[var(--ink)] outline-none"
+                            />
+                        </label>
+
+                        <select
+                            value={serieFilter}
                             onChange={(event) => {
-                                setSearchTerm(event.target.value);
+                                setSerieFilter(event.target.value);
                                 setCurrentPage(1);
                             }}
-                            placeholder="Buscar por nome ou e-mail"
-                            className="h-12 flex-1 bg-transparent pr-4 text-sm text-[var(--ink)] outline-none"
-                        />
-                    </label>
+                            className="h-12 rounded-full border border-[var(--line)] bg-[var(--panel-soft)] px-4 text-sm font-semibold text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
+                        >
+                            <option value="TODAS">Todas as series</option>
+                            {SERIE_OPTIONS.map((serie) => (
+                                <option key={serie} value={serie}>{serie}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
                 {alunosFiltrados.length ? (
@@ -159,6 +186,7 @@ export default function ProfessorStudents() {
                                 <thead className="bg-[var(--panel-soft)] text-left">
                                     <tr>
                                         <th className="px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Aluno</th>
+                                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Serie</th>
                                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Pendentes</th>
                                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Aprovados</th>
                                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Rejeitados</th>
@@ -173,6 +201,7 @@ export default function ProfessorStudents() {
                                                 <strong className="block text-sm font-bold text-[var(--ink)]">{aluno.nome}</strong>
                                                 <span className="mt-1 block text-sm text-[var(--muted)]">{aluno.email}</span>
                                             </td>
+                                            <td className="px-4 py-4 text-sm font-semibold text-[var(--ink)]">{aluno.serie || '-'}</td>
                                             <td className="px-4 py-4 text-sm font-semibold text-[var(--ink)]">{aluno.pendentes}</td>
                                             <td className="px-4 py-4 text-sm font-semibold text-[var(--ink)]">{aluno.aprovados}</td>
                                             <td className="px-4 py-4 text-sm font-semibold text-[var(--ink)]">{aluno.rejeitados}</td>
@@ -258,6 +287,16 @@ export default function ProfessorStudents() {
                             placeholder="E-mail do aluno"
                             className="h-14 w-full rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
                         />
+                        <select
+                            required
+                            value={novoAluno.serie}
+                            onChange={(event) => setNovoAluno((estadoAtual) => ({ ...estadoAtual, serie: event.target.value }))}
+                            className="h-14 w-full rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
+                        >
+                            {SERIE_OPTIONS.map((serie) => (
+                                <option key={serie} value={serie}>{serie}</option>
+                            ))}
+                        </select>
                         <input
                             type="password"
                             required
@@ -293,7 +332,7 @@ export default function ProfessorStudents() {
                             <GraduationCap className="mb-3 text-[#ffb4bc]" size={24} />
                             <h3 className="font-bold">Base centralizada</h3>
                             <p className="mt-2 text-sm leading-6 text-[#d8dde3]">
-                                Todo aluno criado aqui ja nasce conectado ao professor para envio e acompanhamento dos certificados.
+                                Todo aluno criado aqui ja nasce conectado ao professor, com serie definida para facilitar filtro e acompanhamento.
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/6 p-5">

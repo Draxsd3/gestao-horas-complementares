@@ -6,7 +6,7 @@ import TransitionLoader from '../components/TransitionLoader';
 import { useQuery } from '@tanstack/react-query';
 import { Code2 } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { getHomeRoute, getStoredUser } from '../utils/session';
 
 export default function GruposHoras() {
@@ -32,13 +32,11 @@ export default function GruposHoras() {
     };
 
     if (!usuario) {
-        Promise.resolve().then(() => navigate('/'));
-        return null;
+        return <Navigate to="/" replace />;
     }
 
     if (usuario.role !== 'ALUNO') {
-        Promise.resolve().then(() => navigate(getHomeRoute(usuario.role)));
-        return null;
+        return <Navigate to={getHomeRoute(usuario.role)} replace />;
     }
 
     if (isLoading) return <div className="mt-20 text-center text-[var(--brand-red)] animate-pulse">Carregando grupos...</div>;
@@ -51,6 +49,7 @@ export default function GruposHoras() {
                 hideHeading
                 navItems={[
                     { label: 'Home', onClick: () => navigate('/dashboard') },
+                    { label: 'Certificados', onClick: () => navigate('/certificados') },
                     { label: 'Grupos de horas', onClick: () => navigate('/grupos') },
                     { label: 'Perfil', onClick: () => navigate('/perfil') },
                 ]}

@@ -4,17 +4,22 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+function normalizeEmail(email) {
+  return typeof email === 'string' ? email.trim().toLowerCase() : '';
+}
+
 async function main() {
   const professorTeste = {
     nome: 'Professor Teste',
-    email: 'professor@teste.com',
+    email: normalizeEmail('professor@teste.com'),
     senha: '123456',
     role: 'PROFESSOR'
   };
 
   const alunoTeste = {
     nome: 'Aluno Teste',
-    email: 'aluno@teste.com',
+    email: normalizeEmail('aluno@teste.com'),
+    serie: '1a Serie',
     senha: '123456',
     role: 'ALUNO'
   };
@@ -51,6 +56,7 @@ async function main() {
     update: {
       nome: alunoTeste.nome,
       senha: alunoTeste.senha,
+      serie: alunoTeste.serie,
       role: alunoTeste.role,
       professorId: professor.id
     },

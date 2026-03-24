@@ -1,6 +1,16 @@
 export function getStoredUser() {
     const usuarioJson = localStorage.getItem('usuario');
-    return usuarioJson ? JSON.parse(usuarioJson) : null;
+
+    if (!usuarioJson) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(usuarioJson);
+    } catch {
+        localStorage.removeItem('usuario');
+        return null;
+    }
 }
 
 export function getHomeRoute(role) {
