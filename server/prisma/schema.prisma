@@ -36,6 +36,9 @@ model Certificado {
   horasValidadas      Int?
   status              String   @default("PENDENTE")
   arquivoUrl          String
+  arquivoNomeOriginal String?
+  arquivoMimeType     String?
+  arquivoConteudo     Bytes?
   observacaoProfessor String?  @db.Text
   dataEnvio           DateTime @default(now())
   dataAnalise         DateTime?
