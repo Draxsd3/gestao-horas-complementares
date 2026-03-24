@@ -6,6 +6,7 @@ const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
 const fs = require('fs');
+const XLSX = require('xlsx');
 
 const app = express();
 
@@ -23,6 +24,16 @@ const allowedFileTypes = new Set([
     'image/webp',
     'image/jpg'
 ]);
+const spreadsheetAllowedMimeTypes = new Set([
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'text/csv',
+    'application/csv',
+    'text/plain'
+]);
+const spreadsheetAllowedExtensions = new Set(['.xlsx', '.xls', '.csv']);
+const validSerieOptions = ['1a Serie', '2a Serie', '3a Serie'];
+const validSerieOptionsSet = new Set(validSerieOptions);
 const certificateStatusWeight = {
     PENDENTE: 0,
     APROVADO: 1,
@@ -100,6 +111,35 @@ function normalizeSerie(serie) {
     return normalizedSerie || null;
 }
 
+function normalizeSerieForImport(serie) {
+    const normalizedSerie = normalizeSerie(serie);
+
+    if (!normalizedSerie) {
+        return null;
+    }
+
+    const normalizedKey = normalizedSerie
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+
+    const aliases = {
+        '1 serie': '1a Serie',
+        '1a serie': '1a Serie',
+        '1 ano': '1a Serie',
+        '2 serie': '2a Serie',
+        '2a serie': '2a Serie',
+        '2 ano': '2a Serie',
+        '3 serie': '3a Serie',
+        '3a serie': '3a Serie',
+        '3 ano': '3a Serie'
+    };
+
+    return aliases[normalizedKey] || normalizedSerie;
+}
+
 function sanitizeFileName(fileName) {
     const parsedName = path.parse(fileName || 'arquivo');
     const baseName = parsedName.name
@@ -118,6 +158,56 @@ function sanitizeFileName(fileName) {
 
 function createStoredFileName(originalName) {
     return `${Date.now()}-${sanitizeFileName(originalName)}`;
+}
+
+function normalizeSpreadsheetHeader(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '');
+}
+
+function findSpreadsheetColumnIndex(headers, options) {
+    return headers.findIndex((header) => options.includes(header));
+}
+
+function parseStudentSpreadsheet(buffer) {
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const firstSheetName = workbook.SheetNames[0];
+
+    if (!firstSheetName) {
+        throw new Error('A planilha enviada nao possui abas validas.');
+    }
+
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+        header: 1,
+        raw: false,
+        defval: '',
+        blankrows: false
+    });
+
+    if (!rows.length) {
+        throw new Error('A planilha enviada esta vazia.');
+    }
+
+    const headers = rows[0].map((cell) => normalizeSpreadsheetHeader(cell));
+    const nomeIndex = findSpreadsheetColumnIndex(headers, ['nome', 'aluno', 'nomecompleto']);
+    const emailIndex = findSpreadsheetColumnIndex(headers, ['email', 'e mail', 'mail'].map(normalizeSpreadsheetHeader));
+    const serieIndex = findSpreadsheetColumnIndex(headers, ['serie', 'turma', 'ano']);
+    const senhaIndex = findSpreadsheetColumnIndex(headers, ['senha', 'senhainicial', 'senhaacesso']);
+
+    if (nomeIndex === -1 || emailIndex === -1 || serieIndex === -1 || senhaIndex === -1) {
+        throw new Error('A planilha precisa conter as colunas nome, email, serie e senha.');
+    }
+
+    return rows.slice(1).map((row, index) => ({
+        lineNumber: index + 2,
+        nome: String(row[nomeIndex] || '').trim(),
+        email: String(row[emailIndex] || '').trim(),
+        serie: String(row[serieIndex] || '').trim(),
+        senha: String(row[senhaIndex] || '').trim()
+    })).filter((row) => row.nome || row.email || row.serie || row.senha);
 }
 
 function serializeCertificado(certificado) {
@@ -282,6 +372,23 @@ const upload = multer({
     storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
         if (allowedFileTypes.has(file.mimetype)) {
+            cb(null, true);
+            return;
+        }
+
+        cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'arquivo'));
+    }
+});
+
+const spreadsheetUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    },
+    fileFilter: (req, file, cb) => {
+        const fileExtension = path.extname(file.originalname || '').toLowerCase();
+
+        if (spreadsheetAllowedMimeTypes.has(file.mimetype) || spreadsheetAllowedExtensions.has(fileExtension)) {
             cb(null, true);
             return;
         }
@@ -662,6 +769,122 @@ app.post('/professor/alunos', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(400).json({ error: 'Nao foi possivel cadastrar o aluno.' });
+    }
+});
+
+app.post('/professor/alunos/importar', (req, res, next) => {
+    spreadsheetUpload.single('arquivo')(req, res, (error) => {
+        if (error instanceof multer.MulterError) {
+            if (error.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ error: 'A planilha deve ter no maximo 5 MB.' });
+            }
+
+            return res.status(400).json({ error: 'Envie uma planilha .xlsx, .xls ou .csv.' });
+        }
+
+        if (error) {
+            return res.status(400).json({ error: 'Erro ao processar planilha enviada.' });
+        }
+
+        next();
+    });
+}, async (req, res) => {
+    const professorId = parseId(req.body.professorId);
+
+    if (!professorId) {
+        return res.status(400).json({ error: 'Professor invalido.' });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ error: 'Selecione uma planilha para importar.' });
+    }
+
+    try {
+        const professor = await buscarProfessor(professorId);
+
+        if (!professor) {
+            return res.status(404).json({ error: 'Professor nao encontrado.' });
+        }
+
+        const rows = parseStudentSpreadsheet(req.file.buffer);
+
+        if (!rows.length) {
+            return res.status(400).json({ error: 'A planilha nao possui alunos para importar.' });
+        }
+
+        const normalizedEmails = rows
+            .map((row) => normalizeEmail(row.email))
+            .filter(Boolean);
+
+        const usuariosExistentes = normalizedEmails.length
+            ? await prisma.usuario.findMany({
+                where: {
+                    email: {
+                        in: normalizedEmails
+                    }
+                },
+                select: {
+                    email: true
+                }
+            })
+            : [];
+
+        const existingEmails = new Set(usuariosExistentes.map((usuarioExistente) => normalizeEmail(usuarioExistente.email)));
+        const importedEmails = new Set();
+        const errors = [];
+        let createdCount = 0;
+
+        for (const row of rows) {
+            const nome = row.nome.trim();
+            const email = normalizeEmail(row.email);
+            const serie = normalizeSerieForImport(row.serie);
+            const senha = row.senha.trim();
+
+            if (!nome || !email || !serie || !senha) {
+                errors.push(`Linha ${row.lineNumber}: preencha nome, email, serie e senha.`);
+                continue;
+            }
+
+            if (!validSerieOptionsSet.has(serie)) {
+                errors.push(`Linha ${row.lineNumber}: serie invalida. Use 1a Serie, 2a Serie ou 3a Serie.`);
+                continue;
+            }
+
+            if (importedEmails.has(email)) {
+                errors.push(`Linha ${row.lineNumber}: e-mail duplicado na planilha (${email}).`);
+                continue;
+            }
+
+            if (existingEmails.has(email)) {
+                errors.push(`Linha ${row.lineNumber}: o e-mail ${email} ja esta cadastrado.`);
+                continue;
+            }
+
+            await prisma.usuario.create({
+                data: {
+                    nome,
+                    email,
+                    serie,
+                    senha,
+                    role: 'ALUNO',
+                    professorId
+                }
+            });
+
+            importedEmails.add(email);
+            existingEmails.add(email);
+            createdCount += 1;
+        }
+
+        res.status(201).json({
+            totalRows: rows.length,
+            createdCount,
+            skippedCount: rows.length - createdCount,
+            errors
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ error: error.message || 'Nao foi possivel importar a planilha.' });
     }
 });
 
