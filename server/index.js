@@ -130,7 +130,12 @@ app.post('/cadastro', async (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-    const { email, senha } = req.body;
+    const email = normalizeEmail(req.body?.email);
+    const senha = typeof req.body?.senha === 'string' ? req.body.senha.trim() : '';
+
+    if (!email || !senha) {
+        return res.status(400).json({ error: 'Informe e-mail e senha.' });
+    }
 
     try {
         const usuario = await buscarUsuarioPorEmail(email);
