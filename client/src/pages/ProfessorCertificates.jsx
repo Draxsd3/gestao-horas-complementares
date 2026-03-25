@@ -151,7 +151,9 @@ function CertificateCard({
                     <div className="mt-3 inline-flex flex-col rounded-2xl bg-[var(--panel-soft)] px-4 py-3">
                         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Aluno</span>
                         <strong className="mt-1 text-base font-bold text-[var(--ink)]">{certificado.aluno.nome}</strong>
-                        <span className="mt-1 text-sm text-[var(--muted)]">{certificado.aluno.email}</span>
+                        <span className="mt-1 text-sm text-[var(--muted)]">
+                            {certificado.aluno.rm ? `RM ${certificado.aluno.rm}` : (certificado.aluno.email || 'Sem identificador informado')}
+                        </span>
                     </div>
                     <p className="mt-1 text-sm text-[var(--muted)]">
                         Grupo atual: {certificado.grupo.numero} - {certificado.grupo.descricao}
@@ -309,7 +311,8 @@ export default function ProfessorCertificates() {
             const matchesSearch = !term
                 || certificado.titulo.toLowerCase().includes(term)
                 || certificado.aluno.nome.toLowerCase().includes(term)
-                || certificado.aluno.email.toLowerCase().includes(term)
+                || (certificado.aluno.rm || '').toLowerCase().includes(term)
+                || (certificado.aluno.email || '').toLowerCase().includes(term)
                 || `${certificado.grupo.numero}`.includes(term);
 
             return matchesStatus && matchesSearch;
@@ -390,7 +393,7 @@ export default function ProfessorCertificates() {
                                 type="text"
                                 value={searchTerm}
                                 onChange={(event) => setSearchTerm(event.target.value)}
-                                placeholder="Buscar por titulo, aluno, e-mail ou grupo"
+                                placeholder="Buscar por titulo, aluno, RM ou grupo"
                                 className="h-12 flex-1 bg-transparent pr-4 text-sm text-[var(--ink)] outline-none"
                             />
                         </label>

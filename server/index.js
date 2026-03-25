@@ -34,6 +34,7 @@ const spreadsheetAllowedMimeTypes = new Set([
 const spreadsheetAllowedExtensions = new Set(['.xlsx', '.xls', '.csv']);
 const validSerieOptions = ['1a Serie', '2a Serie', '3a Serie'];
 const validSerieOptionsSet = new Set(validSerieOptions);
+const DEFAULT_STUDENT_PASSWORD = 'Aluno@123';
 const certificateStatusWeight = {
     PENDENTE: 0,
     APROVADO: 1,
@@ -104,6 +105,14 @@ function getMimeTypeFromFileName(fileName) {
 
 function normalizeEmail(email) {
     return typeof email === 'string' ? email.trim().toLowerCase() : '';
+}
+
+function normalizeRm(value) {
+    const rawValue = typeof value === 'string' || typeof value === 'number'
+        ? String(value).trim()
+        : '';
+
+    return rawValue.replace(/\D+/g, '');
 }
 
 function normalizeSerie(serie) {
@@ -192,22 +201,20 @@ function parseStudentSpreadsheet(buffer) {
     }
 
     const headers = rows[0].map((cell) => normalizeSpreadsheetHeader(cell));
-    const nomeIndex = findSpreadsheetColumnIndex(headers, ['nome', 'aluno', 'nomecompleto']);
-    const emailIndex = findSpreadsheetColumnIndex(headers, ['email', 'e mail', 'mail'].map(normalizeSpreadsheetHeader));
+    const rmIndex = findSpreadsheetColumnIndex(headers, ['rm', 'registro', 'matricula']);
+    const nomeIndex = findSpreadsheetColumnIndex(headers, ['alunos', 'aluno', 'nome', 'nomecompleto']);
     const serieIndex = findSpreadsheetColumnIndex(headers, ['serie', 'turma', 'ano']);
-    const senhaIndex = findSpreadsheetColumnIndex(headers, ['senha', 'senhainicial', 'senhaacesso']);
 
-    if (nomeIndex === -1 || emailIndex === -1 || serieIndex === -1 || senhaIndex === -1) {
-        throw new Error('A planilha precisa conter as colunas nome, email, serie e senha.');
+    if (rmIndex === -1 || nomeIndex === -1) {
+        throw new Error('A planilha precisa conter as colunas RM e Alunos.');
     }
 
     return rows.slice(1).map((row, index) => ({
         lineNumber: index + 2,
+        rm: String(row[rmIndex] || '').trim(),
         nome: String(row[nomeIndex] || '').trim(),
-        email: String(row[emailIndex] || '').trim(),
-        serie: String(row[serieIndex] || '').trim(),
-        senha: String(row[senhaIndex] || '').trim()
-    })).filter((row) => row.nome || row.email || row.serie || row.senha);
+        serie: serieIndex >= 0 ? String(row[serieIndex] || '').trim() : ''
+    })).filter((row) => row.nome || row.rm || row.serie);
 }
 
 function serializeCertificado(certificado) {
@@ -294,6 +301,47 @@ async function buscarUsuarioPorEmail(email) {
     });
 }
 
+async function buscarUsuarioPorRm(rm) {
+    const normalizedRm = normalizeRm(rm);
+
+    if (!normalizedRm) {
+        return null;
+    }
+
+    return prisma.usuario.findFirst({
+        where: {
+            rm: normalizedRm
+        }
+    });
+}
+
+async function buscarUsuarioPorIdentificador(identificador) {
+    const normalizedIdentifier = typeof identificador === 'string' ? identificador.trim() : '';
+
+    if (!normalizedIdentifier) {
+        return null;
+    }
+
+    if (normalizedIdentifier.includes('@')) {
+        return buscarUsuarioPorEmail(normalizedIdentifier);
+    }
+
+    return buscarUsuarioPorRm(normalizedIdentifier);
+}
+
+function serializeSessionUser(usuario) {
+    return {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        rm: usuario.rm,
+        role: usuario.role,
+        serie: usuario.serie,
+        professorId: usuario.professorId,
+        precisaTrocarSenha: usuario.precisaTrocarSenha
+    };
+}
+
 app.get('/', (req, res) => {
     res.send('Servidor voando!');
 });
@@ -311,53 +359,64 @@ app.get('/grupos', async (req, res) => {
 });
 
 app.post('/cadastro', async (req, res) => {
-    const { nome, email, senha, role, professorId, serie } = req.body;
+    const { nome, email, rm, senha, role, professorId, serie } = req.body;
     const normalizedEmail = normalizeEmail(email);
+    const normalizedRm = normalizeRm(rm);
+    const userRole = role || 'ALUNO';
 
     try {
-        const usuarioExistente = await buscarUsuarioPorEmail(normalizedEmail);
+        if (userRole === 'ALUNO' && !normalizedRm) {
+            return res.status(400).json({ error: 'Informe o RM do aluno.' });
+        }
+
+        if (userRole === 'PROFESSOR' && !normalizedEmail) {
+            return res.status(400).json({ error: 'Informe o e-mail do professor.' });
+        }
+
+        const usuarioExistente = userRole === 'ALUNO'
+            ? await buscarUsuarioPorRm(normalizedRm)
+            : await buscarUsuarioPorEmail(normalizedEmail);
 
         if (usuarioExistente) {
-            return res.status(400).json({ error: 'E-mail ja cadastrado ou dados invalidos.' });
+            return res.status(400).json({ error: 'Ja existe um usuario cadastrado com estes dados.' });
         }
 
         const novoUsuario = await prisma.usuario.create({
             data: {
                 nome,
-                email: normalizedEmail,
-                serie: role === 'ALUNO' || !role ? normalizeSerie(serie) : null,
+                email: userRole === 'PROFESSOR' ? normalizedEmail : null,
+                rm: userRole === 'ALUNO' ? normalizedRm : null,
+                serie: userRole === 'ALUNO' ? normalizeSerie(serie) : null,
                 senha,
-                role: role || 'ALUNO',
-                professorId: role === 'ALUNO' || !role ? parseId(professorId) : null
+                role: userRole,
+                professorId: userRole === 'ALUNO' ? parseId(professorId) : null
             }
         });
 
-        res.status(201).json(novoUsuario);
+        res.status(201).json(serializeSessionUser(novoUsuario));
     } catch (error) {
         console.error(error);
-        res.status(400).json({ error: 'E-mail ja cadastrado ou dados invalidos.' });
+        res.status(400).json({ error: 'Nao foi possivel cadastrar o usuario.' });
     }
 });
 
 app.post('/login', async (req, res) => {
-    const email = normalizeEmail(req.body?.email);
+    const identificador = typeof req.body?.identificador === 'string'
+        ? req.body.identificador.trim()
+        : typeof req.body?.email === 'string'
+            ? req.body.email.trim()
+            : '';
     const senha = typeof req.body?.senha === 'string' ? req.body.senha.trim() : '';
 
-    if (!email || !senha) {
-        return res.status(400).json({ error: 'Informe e-mail e senha.' });
+    if (!identificador || !senha) {
+        return res.status(400).json({ error: 'Informe RM ou e-mail e senha.' });
     }
 
     try {
-        const usuario = await buscarUsuarioPorEmail(email);
+        const usuario = await buscarUsuarioPorIdentificador(identificador);
 
         if (usuario && usuario.senha === senha) {
-            res.json({
-                id: usuario.id,
-                nome: usuario.nome,
-                email: usuario.email,
-                role: usuario.role,
-                professorId: usuario.professorId
-            });
+            res.json(serializeSessionUser(usuario));
             return;
         }
 
@@ -365,6 +424,45 @@ app.post('/login', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erro ao realizar login.' });
+    }
+});
+
+app.patch('/alunos/:alunoId/primeiro-acesso', async (req, res) => {
+    const alunoId = parseId(req.params.alunoId);
+    const novaSenha = typeof req.body?.novaSenha === 'string' ? req.body.novaSenha.trim() : '';
+
+    if (!alunoId || !novaSenha) {
+        return res.status(400).json({ error: 'Informe uma nova senha valida.' });
+    }
+
+    if (novaSenha.length < 6) {
+        return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres.' });
+    }
+
+    try {
+        const aluno = await prisma.usuario.findFirst({
+            where: {
+                id: alunoId,
+                role: 'ALUNO'
+            }
+        });
+
+        if (!aluno) {
+            return res.status(404).json({ error: 'Aluno nao encontrado.' });
+        }
+
+        const alunoAtualizado = await prisma.usuario.update({
+            where: { id: alunoId },
+            data: {
+                senha: novaSenha,
+                precisaTrocarSenha: false
+            }
+        });
+
+        res.json(serializeSessionUser(alunoAtualizado));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Nao foi possivel atualizar a senha inicial.' });
     }
 });
 
@@ -718,7 +816,7 @@ app.get('/professor/alunos/:professorId', async (req, res) => {
             return {
                 id: aluno.id,
                 nome: aluno.nome,
-                email: aluno.email,
+                rm: aluno.rm,
                 serie: aluno.serie,
                 totalCertificados: aluno.certificadosEnviados.length,
                 ...resumo
@@ -732,13 +830,137 @@ app.get('/professor/alunos/:professorId', async (req, res) => {
     }
 });
 
-app.post('/professor/alunos', async (req, res) => {
-    const { nome, email, senha, professorId, serie } = req.body;
-    const professorIdNumerico = parseId(professorId);
-    const normalizedEmail = normalizeEmail(email);
+app.get('/professor/alunos/:professorId/:alunoId/desempenho', async (req, res) => {
+    const professorId = parseId(req.params.professorId);
+    const alunoId = parseId(req.params.alunoId);
 
-    if (!professorIdNumerico) {
-        return res.status(400).json({ error: 'Professor invalido.' });
+    if (!professorId || !alunoId) {
+        return res.status(400).json({ error: 'Professor ou aluno invalido.' });
+    }
+
+    try {
+        const professor = await buscarProfessor(professorId);
+
+        if (!professor) {
+            return res.status(404).json({ error: 'Professor nao encontrado.' });
+        }
+
+        const aluno = await prisma.usuario.findFirst({
+            where: {
+                id: alunoId,
+                professorId,
+                role: 'ALUNO'
+            },
+            include: {
+                certificadosEnviados: {
+                    select: {
+                        id: true,
+                        status: true,
+                        horas: true,
+                        horasValidadas: true
+                    }
+                }
+            }
+        });
+
+        if (!aluno) {
+            return res.status(404).json({ error: 'Aluno nao encontrado para este professor.' });
+        }
+
+        const grupos = await prisma.grupo.findMany({
+            orderBy: { numero: 'asc' },
+            include: {
+                certificados: {
+                    where: {
+                        alunoId,
+                        status: 'APROVADO'
+                    },
+                    select: {
+                        id: true,
+                        horas: true,
+                        horasValidadas: true
+                    }
+                }
+            }
+        });
+
+        const gruposProgresso = grupos.map((grupo) => {
+            const horasAprovadas = grupo.certificados.reduce(
+                (soma, certificado) => soma + (certificado.horasValidadas ?? certificado.horas),
+                0
+            );
+            const horasFaltantes = Math.max(grupo.horasMaximas - horasAprovadas, 0);
+            const percentual = grupo.horasMaximas
+                ? Math.min(Math.round((horasAprovadas * 100) / grupo.horasMaximas), 100)
+                : 0;
+
+            return {
+                id: grupo.id,
+                numero: grupo.numero,
+                descricao: grupo.descricao,
+                horasMaximas: grupo.horasMaximas,
+                horasAprovadas,
+                horasFaltantes,
+                percentual,
+                totalCertificadosAprovados: grupo.certificados.length,
+                concluido: horasFaltantes === 0
+            };
+        });
+
+        const totalHorasMaximas = gruposProgresso.reduce((soma, grupo) => soma + grupo.horasMaximas, 0);
+        const totalHorasAprovadas = gruposProgresso.reduce((soma, grupo) => soma + grupo.horasAprovadas, 0);
+        const percentualGeral = totalHorasMaximas
+            ? Math.min(Math.round((totalHorasAprovadas * 100) / totalHorasMaximas), 100)
+            : 0;
+        const gruposPendentes = gruposProgresso.filter((grupo) => !grupo.concluido);
+        const resumoCertificados = aluno.certificadosEnviados.reduce((acc, certificado) => {
+            if (certificado.status === 'PENDENTE') acc.pendentes += 1;
+            if (certificado.status === 'APROVADO') acc.aprovados += 1;
+            if (certificado.status === 'REJEITADO') acc.rejeitados += 1;
+            return acc;
+        }, {
+            pendentes: 0,
+            aprovados: 0,
+            rejeitados: 0
+        });
+
+        res.json({
+            aluno: {
+                id: aluno.id,
+                nome: aluno.nome,
+                rm: aluno.rm,
+                serie: aluno.serie
+            },
+            resumo: {
+                totalHorasMaximas,
+                totalHorasAprovadas,
+                percentualGeral,
+                gruposConcluidos: gruposProgresso.filter((grupo) => grupo.concluido).length,
+                gruposPendentes: gruposPendentes.length,
+                totalCertificados: aluno.certificadosEnviados.length,
+                ...resumoCertificados
+            },
+            grupos: gruposProgresso,
+            pendencias: gruposPendentes.map((grupo) => ({
+                id: grupo.id,
+                numero: grupo.numero,
+                descricao: grupo.descricao,
+                horasFaltantes: grupo.horasFaltantes
+            }))
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erro ao carregar desempenho do aluno.' });
+    }
+});
+
+app.post('/professor/alunos', async (req, res) => {
+    const { nome, rm, professorId, serie } = req.body;
+    const professorIdNumerico = parseId(professorId);
+    const normalizedRm = normalizeRm(rm);
+
+    if (!professorIdNumerico || !normalizedRm) {
+        return res.status(400).json({ error: 'Professor ou RM invalido.' });
     }
 
     try {
@@ -748,7 +970,7 @@ app.post('/professor/alunos', async (req, res) => {
             return res.status(404).json({ error: 'Professor nao encontrado.' });
         }
 
-        const usuarioExistente = await buscarUsuarioPorEmail(normalizedEmail);
+        const usuarioExistente = await buscarUsuarioPorRm(normalizedRm);
 
         if (usuarioExistente) {
             return res.status(400).json({ error: 'Nao foi possivel cadastrar o aluno.' });
@@ -757,9 +979,11 @@ app.post('/professor/alunos', async (req, res) => {
         const aluno = await prisma.usuario.create({
             data: {
                 nome,
-                email: normalizedEmail,
+                email: null,
+                rm: normalizedRm,
                 serie: normalizeSerie(serie),
-                senha,
+                senha: DEFAULT_STUDENT_PASSWORD,
+                precisaTrocarSenha: true,
                 role: 'ALUNO',
                 professorId: professorIdNumerico
             }
@@ -807,72 +1031,79 @@ app.post('/professor/alunos/importar', (req, res, next) => {
         }
 
         const rows = parseStudentSpreadsheet(req.file.buffer);
+        const seriePadraoImportacao = normalizeSerieForImport(req.body?.serie);
 
         if (!rows.length) {
             return res.status(400).json({ error: 'A planilha nao possui alunos para importar.' });
         }
 
-        const normalizedEmails = rows
-            .map((row) => normalizeEmail(row.email))
+        if (seriePadraoImportacao && !validSerieOptionsSet.has(seriePadraoImportacao)) {
+            return res.status(400).json({ error: 'Serie padrao invalida. Use 1a Serie, 2a Serie ou 3a Serie.' });
+        }
+
+        const normalizedRms = rows
+            .map((row) => normalizeRm(row.rm))
             .filter(Boolean);
 
-        const usuariosExistentes = normalizedEmails.length
+        const usuariosExistentes = normalizedRms.length
             ? await prisma.usuario.findMany({
                 where: {
-                    email: {
-                        in: normalizedEmails
+                    rm: {
+                        in: normalizedRms
                     }
                 },
                 select: {
-                    email: true
+                    rm: true
                 }
             })
             : [];
 
-        const existingEmails = new Set(usuariosExistentes.map((usuarioExistente) => normalizeEmail(usuarioExistente.email)));
-        const importedEmails = new Set();
+        const existingRms = new Set(usuariosExistentes.map((usuarioExistente) => normalizeRm(usuarioExistente.rm)));
+        const importedRms = new Set();
         const errors = [];
         let createdCount = 0;
 
         for (const row of rows) {
             const nome = row.nome.trim();
-            const email = normalizeEmail(row.email);
-            const serie = normalizeSerieForImport(row.serie);
-            const senha = row.senha.trim();
+            const rm = normalizeRm(row.rm);
+            const serieDaLinha = normalizeSerieForImport(row.serie);
+            const serie = serieDaLinha || seriePadraoImportacao || null;
 
-            if (!nome || !email || !serie || !senha) {
-                errors.push(`Linha ${row.lineNumber}: preencha nome, email, serie e senha.`);
+            if (!nome || !rm) {
+                errors.push(`Linha ${row.lineNumber}: preencha RM e nome.`);
                 continue;
             }
 
-            if (!validSerieOptionsSet.has(serie)) {
+            if (serie && !validSerieOptionsSet.has(serie)) {
                 errors.push(`Linha ${row.lineNumber}: serie invalida. Use 1a Serie, 2a Serie ou 3a Serie.`);
                 continue;
             }
 
-            if (importedEmails.has(email)) {
-                errors.push(`Linha ${row.lineNumber}: e-mail duplicado na planilha (${email}).`);
+            if (importedRms.has(rm)) {
+                errors.push(`Linha ${row.lineNumber}: RM duplicado na planilha (${rm}).`);
                 continue;
             }
 
-            if (existingEmails.has(email)) {
-                errors.push(`Linha ${row.lineNumber}: o e-mail ${email} ja esta cadastrado.`);
+            if (existingRms.has(rm)) {
+                errors.push(`Linha ${row.lineNumber}: o RM ${rm} ja esta cadastrado.`);
                 continue;
             }
 
             await prisma.usuario.create({
                 data: {
                     nome,
-                    email,
+                    email: null,
+                    rm,
                     serie,
-                    senha,
+                    senha: DEFAULT_STUDENT_PASSWORD,
+                    precisaTrocarSenha: true,
                     role: 'ALUNO',
                     professorId
                 }
             });
 
-            importedEmails.add(email);
-            existingEmails.add(email);
+            importedRms.add(rm);
+            existingRms.add(rm);
             createdCount += 1;
         }
 
@@ -913,7 +1144,8 @@ app.get('/professor/certificados/:professorId', async (req, res) => {
                     select: {
                         id: true,
                         nome: true,
-                        email: true
+                        email: true,
+                        rm: true
                     }
                 },
                 grupo: {
@@ -1023,7 +1255,8 @@ app.patch('/professor/certificados/:certificadoId', async (req, res) => {
                     select: {
                         id: true,
                         nome: true,
-                        email: true
+                        email: true,
+                        rm: true
                     }
                 },
                 grupo: {
