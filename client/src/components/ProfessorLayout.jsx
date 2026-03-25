@@ -37,6 +37,7 @@ export default function ProfessorLayout({
     ];
     const headerNavItems = [
         { label: 'Painel', onClick: () => navigate('/professor') },
+        { label: 'Listagem', onClick: () => navigate('/professor/alunos/listagem') },
         { label: 'Alunos', onClick: () => navigate('/professor/alunos') },
         { label: 'Certificados', onClick: () => navigate('/professor/certificados') },
     ];
