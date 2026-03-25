@@ -73,6 +73,7 @@ export default function ProfessorDashboard() {
             title="Painel do professor"
             subtitle={`Ola, ${usuario?.nome}. Acompanhe o andamento das analises e da turma vinculada.`}
             actionItems={[
+                { label: 'Listagem da turma', onClick: () => navigate('/professor/alunos/listagem') },
                 { label: 'Cadastrar aluno', onClick: () => navigate('/professor/alunos') },
             ]}
         >

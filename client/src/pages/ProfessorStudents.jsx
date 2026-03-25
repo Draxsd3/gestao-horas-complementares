@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BadgeCheck, ChartColumn, Download, FileUp, GraduationCap, IdCard, Search, Upload, UserPlus2, UsersRound, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import ProfessorLayout from '../components/ProfessorLayout';
 import TransitionLoader from '../components/TransitionLoader';
@@ -218,6 +219,7 @@ function MobileStudentRow({ aluno, onOpenPerformance }) {
 export default function ProfessorStudents() {
     const queryClient = useQueryClient();
     const usuario = getStoredUser();
+    const navigate = useNavigate();
     const performancePanelRef = useRef(null);
     const [novoAluno, setNovoAluno] = useState({
         nome: '',
@@ -372,6 +374,7 @@ export default function ProfessorStudents() {
             title="Alunos vinculados"
             subtitle="Cadastre e acompanhe os alunos vinculados ao professor."
             actionItems={[
+                { label: 'Ver listagem', onClick: () => navigate('/professor/alunos/listagem') },
                 { label: 'Cadastrar aluno', onClick: () => document.getElementById('cadastro-aluno')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
             ]}
         >
