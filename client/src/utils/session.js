@@ -13,6 +13,15 @@ export function getStoredUser() {
     }
 }
 
-export function getHomeRoute(role) {
+export function requiresPasswordChange(usuario) {
+    return usuario?.role === 'ALUNO' && usuario?.precisaTrocarSenha;
+}
+
+export function getHomeRoute(roleOrUser) {
+    if (typeof roleOrUser === 'object' && requiresPasswordChange(roleOrUser)) {
+        return '/primeiro-acesso';
+    }
+
+    const role = typeof roleOrUser === 'string' ? roleOrUser : roleOrUser?.role;
     return role === 'PROFESSOR' ? '/professor' : '/dashboard';
 }

@@ -1,6 +1,6 @@
 import api from '../api/api';
 import { useState } from 'react';
-import { Mail, Lock } from 'lucide-react';
+import { Lock, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import TransitionLoader from '../components/TransitionLoader';
@@ -9,7 +9,7 @@ import logoGovernoSP from '../assets/logo-governo-do-estado-sp.png';
 import { getHomeRoute } from '../utils/session';
 
 export default function Login() {
-    const [email, setEmail] = useState('');
+    const [identificador, setIdentificador] = useState('');
     const [senha, setSenha] = useState('');
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
@@ -17,6 +17,10 @@ export default function Login() {
     const queryClient = useQueryClient();
 
     const preloadUserData = (usuario) => {
+        if (usuario.precisaTrocarSenha) {
+            return;
+        }
+
         if (usuario.role === 'PROFESSOR') {
             queryClient.prefetchQuery({
                 queryKey: ['professor-dashboard', usuario.id],
@@ -47,11 +51,11 @@ export default function Login() {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        const normalizedEmail = email.trim();
+        const normalizedIdentifier = identificador.trim();
         const normalizedSenha = senha.trim();
 
-        if (!normalizedEmail || !normalizedSenha) {
-            setErrorMessage('Informe e-mail e senha para acessar.');
+        if (!normalizedIdentifier || !normalizedSenha) {
+            setErrorMessage('Informe RM ou e-mail e senha para acessar.');
             return;
         }
 
@@ -59,13 +63,13 @@ export default function Login() {
             setErrorMessage('');
             setIsTransitioning(true);
             const response = await api.post('/login', {
-                email: normalizedEmail,
+                identificador: normalizedIdentifier,
                 senha: normalizedSenha
             });
 
             localStorage.setItem('usuario', JSON.stringify(response.data));
             preloadUserData(response.data);
-            navigate(getHomeRoute(response.data.role), { replace: true });
+            navigate(getHomeRoute(response.data), { replace: true });
         } catch (error) {
             setIsTransitioning(false);
             setErrorMessage(error.response?.data?.error || 'Erro ao realizar login.');
@@ -101,22 +105,22 @@ export default function Login() {
                         <div className="mb-8 text-center">
                             <h1 className="text-3xl font-bold text-[var(--ink)]">Entrar</h1>
                             <p className="mt-2 text-sm text-[var(--muted)]">
-                                Acesse o painel de aluno ou professor com seu e-mail e senha.
+                                Aluno acessa com RM. Professor acessa com e-mail.
                             </p>
                         </div>
 
                         <div className="space-y-4">
                             <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]" size={18} />
+                                <UserRound className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]" size={18} />
                                 <input
-                                    type="email"
-                                    placeholder="E-mail"
+                                    type="text"
+                                    placeholder="RM do aluno ou e-mail do professor"
                                     className="h-14 w-full rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] py-2 pl-12 pr-4 text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
                                     onChange={(e) => {
-                                        setEmail(e.target.value);
+                                        setIdentificador(e.target.value);
                                         if (errorMessage) setErrorMessage('');
                                     }}
-                                    value={email}
+                                    value={identificador}
                                     autoComplete="username"
                                     disabled={isTransitioning}
                                 />

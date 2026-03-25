@@ -5,7 +5,7 @@ import TransitionLoader from '../components/TransitionLoader';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { UserRound, Mail, LogOut, Camera } from 'lucide-react';
+import { UserRound, LogOut, Camera, IdCard } from 'lucide-react';
 import { getHomeRoute, getStoredUser } from '../utils/session';
 
 function InfoCard({ icon, label, value }) {
@@ -161,7 +161,7 @@ export default function Perfil() {
 
                         <div className="mt-6 space-y-3">
                             <InfoCard icon={UserRound} label="Nome" value={usuario.nome} />
-                            <InfoCard icon={Mail} label="E-mail" value={usuario.email || 'Nao informado na sessao'} />
+                            <InfoCard icon={IdCard} label="RM" value={usuario.rm || 'Nao informado na sessao'} />
                         </div>
 
                         <div className="mt-4 rounded-[1.25rem] bg-[var(--panel-soft)] p-4">

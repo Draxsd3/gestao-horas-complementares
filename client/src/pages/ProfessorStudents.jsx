@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, FileUp, GraduationCap, Mail, Search, Upload, UserPlus2, UsersRound } from 'lucide-react';
+import { BadgeCheck, ChartColumn, Download, FileUp, GraduationCap, IdCard, Search, Upload, UserPlus2, UsersRound, X } from 'lucide-react';
 import api from '../api/api';
 import ProfessorLayout from '../components/ProfessorLayout';
 import TransitionLoader from '../components/TransitionLoader';
@@ -8,6 +8,10 @@ import { getStoredUser } from '../utils/session';
 
 const ROWS_PER_PAGE = 8;
 const SERIE_OPTIONS = ['1a Serie', '2a Serie', '3a Serie'];
+
+function getStudentIdentifierLabel(aluno) {
+    return aluno?.rm ? `RM ${aluno.rm}` : 'RM nao informado';
+}
 
 function SummaryBadge({ label, value }) {
     return (
@@ -18,13 +22,161 @@ function SummaryBadge({ label, value }) {
     );
 }
 
-function MobileStudentRow({ aluno }) {
+function ProgressGroupCard({ grupo }) {
+    return (
+        <article className="rounded-[1.4rem] border border-[var(--line)] bg-white p-4 shadow-[0_14px_28px_rgba(44,52,61,0.05)]">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <span className="inline-flex rounded-full bg-[#eef1f4] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--muted)]">
+                        Grupo {grupo.numero}
+                    </span>
+                    <h4 className="mt-3 text-base font-bold text-[var(--ink)]">{grupo.descricao}</h4>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${grupo.concluido ? 'bg-[#eaf7ef] text-[#2f8f57]' : 'bg-[#fff4e6] text-[#c97a16]'}`}>
+                    {grupo.percentual}%
+                </span>
+            </div>
+
+            <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-[#e4e8ec]">
+                <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                        width: `${Math.max(grupo.percentual, grupo.percentual > 0 ? 8 : 0)}%`,
+                        background: grupo.concluido
+                            ? 'linear-gradient(90deg, #3c9b5f 0%, #6dc98d 100%)'
+                            : 'linear-gradient(90deg, #ce1126 0%, #f04b58 100%)'
+                    }}
+                />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
+                <span>{grupo.horasAprovadas}/{grupo.horasMaximas}h</span>
+                <span>{grupo.totalCertificadosAprovados} certificado(s) aprovado(s)</span>
+                {!grupo.concluido ? <span>Faltam {grupo.horasFaltantes}h</span> : <span>Carga concluida</span>}
+            </div>
+        </article>
+    );
+}
+
+function StudentPerformancePanel({ alunoId, professorId, onClose }) {
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['professor-aluno-desempenho', professorId, alunoId],
+        queryFn: async () => {
+            const response = await api.get(`/professor/alunos/${professorId}/${alunoId}/desempenho`);
+            return response.data;
+        },
+        enabled: !!alunoId && !!professorId
+    });
+
+    return (
+        <section className="rounded-[1.8rem] border border-[var(--line)] bg-white p-6 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--brand-red)]">Desempenho individual</p>
+                    <h2 className="mt-2 text-2xl font-bold text-[var(--ink)]">
+                        {data?.aluno?.nome || 'Carregando aluno...'}
+                    </h2>
+                    <p className="mt-2 text-sm text-[var(--muted)]">
+                        {data?.aluno?.rm ? `RM ${data.aluno.rm}` : 'Aguarde o carregamento dos dados.'}
+                        {data?.aluno?.serie ? ` · ${data.aluno.serie}` : ''}
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-[var(--line)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition-colors hover:border-[var(--brand-red)] hover:text-[var(--brand-red)]"
+                >
+                    <X size={16} />
+                    Fechar
+                </button>
+            </div>
+
+            {isLoading ? (
+                <div className="mt-6 rounded-[1.5rem] bg-[var(--panel-soft)] p-6 text-center text-[var(--muted)]">
+                    Carregando desempenho do aluno...
+                </div>
+            ) : null}
+
+            {error ? (
+                <div className="mt-6 rounded-[1.5rem] border border-[var(--brand-red)] bg-[var(--brand-red-soft)] p-6 text-center text-[var(--brand-red)]">
+                    Erro ao carregar desempenho do aluno.
+                </div>
+            ) : null}
+
+            {!isLoading && !error && data ? (
+                <>
+                    <div className="mt-6 grid gap-4 md:grid-cols-4">
+                        <SummaryBadge label="Progresso geral" value={`${data.resumo.percentualGeral}%`} />
+                        <SummaryBadge label="Horas aprovadas" value={`${data.resumo.totalHorasAprovadas}h`} />
+                        <SummaryBadge label="Grupos concluidos" value={data.resumo.gruposConcluidos} />
+                        <SummaryBadge label="Pendencias" value={data.resumo.gruposPendentes} />
+                    </div>
+
+                    <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                        <div>
+                            <div className="mb-4 flex items-center gap-3">
+                                <ChartColumn className="text-[var(--brand-red)]" size={20} />
+                                <h3 className="text-lg font-bold text-[var(--ink)]">Progresso por grupo</h3>
+                            </div>
+                            <div className="grid gap-4">
+                                {data.grupos.map((grupo) => (
+                                    <ProgressGroupCard key={grupo.id} grupo={grupo} />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="rounded-[1.6rem] border border-[var(--line)] bg-[var(--panel-soft)] p-5">
+                            <div className="mb-4 flex items-center gap-3">
+                                <BadgeCheck className="text-[var(--brand-red)]" size={20} />
+                                <h3 className="text-lg font-bold text-[var(--ink)]">O que falta para este aluno</h3>
+                            </div>
+
+                            <div className="space-y-3">
+                                {data.pendencias.length ? data.pendencias.map((pendencia) => (
+                                    <div key={pendencia.id} className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
+                                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
+                                            Grupo {pendencia.numero}
+                                        </p>
+                                        <p className="mt-2 text-sm font-semibold text-[var(--ink)]">{pendencia.descricao}</p>
+                                        <p className="mt-2 text-sm text-[var(--muted)]">Faltam {pendencia.horasFaltantes}h para completar.</p>
+                                    </div>
+                                )) : (
+                                    <div className="rounded-2xl bg-white px-4 py-5 text-sm font-semibold text-[#2f8f57] shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
+                                        Este aluno ja completou todos os grupos de horas configurados.
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-5 grid gap-3 md:grid-cols-3 lg:grid-cols-1">
+                                <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
+                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Certificados pendentes</p>
+                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{data.resumo.pendentes}</strong>
+                                </div>
+                                <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
+                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Aprovados</p>
+                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{data.resumo.aprovados}</strong>
+                                </div>
+                                <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
+                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Rejeitados</p>
+                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{data.resumo.rejeitados}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            ) : null}
+        </section>
+    );
+}
+
+function MobileStudentRow({ aluno, onOpenPerformance }) {
     return (
         <article className="rounded-[1.5rem] border border-[var(--line)] bg-white p-4 shadow-[0_14px_28px_rgba(44,52,61,0.05)]">
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <h3 className="text-base font-bold text-[var(--ink)]">{aluno.nome}</h3>
-                    <p className="mt-1 text-sm text-[var(--muted)]">{aluno.email}</p>
+                    <p className="mt-1 text-sm text-[var(--muted)]">{getStudentIdentifierLabel(aluno)}</p>
                     <span className="mt-3 inline-flex rounded-full bg-[var(--brand-red-soft)] px-3 py-1 text-xs font-semibold text-[var(--brand-red)]">
                         {aluno.serie || 'Sem serie'}
                     </span>
@@ -51,6 +203,14 @@ function MobileStudentRow({ aluno }) {
                     <strong className="mt-1 block text-lg font-bold text-[var(--ink)]">{aluno.horasValidadas}h</strong>
                 </div>
             </div>
+            <button
+                type="button"
+                onClick={onOpenPerformance}
+                className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[var(--line)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition-colors hover:border-[var(--brand-red)] hover:text-[var(--brand-red)]"
+            >
+                <ChartColumn size={16} />
+                Ver desempenho
+            </button>
         </article>
     );
 }
@@ -60,15 +220,16 @@ export default function ProfessorStudents() {
     const usuario = getStoredUser();
     const [novoAluno, setNovoAluno] = useState({
         nome: '',
-        email: '',
-        serie: SERIE_OPTIONS[0],
-        senha: ''
+        rm: '',
+        serie: ''
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [serieFilter, setSerieFilter] = useState('TODAS');
     const [currentPage, setCurrentPage] = useState(1);
     const [arquivoImportacao, setArquivoImportacao] = useState(null);
+    const [serieImportacao, setSerieImportacao] = useState('');
     const [importResult, setImportResult] = useState(null);
+    const [selectedStudentId, setSelectedStudentId] = useState(null);
 
     const { data: alunos, isLoading, error } = useQuery({
         queryKey: ['professor-alunos', usuario?.id],
@@ -82,11 +243,11 @@ export default function ProfessorStudents() {
     const cadastrarAlunoMutation = useMutation({
         mutationFn: (payload) => api.post('/professor/alunos', payload),
         onSuccess: () => {
-            setNovoAluno({ nome: '', email: '', serie: SERIE_OPTIONS[0], senha: '' });
+            setNovoAluno({ nome: '', rm: '', serie: '' });
             setImportResult(null);
             queryClient.invalidateQueries({ queryKey: ['professor-dashboard', usuario.id] });
             queryClient.invalidateQueries({ queryKey: ['professor-alunos', usuario.id] });
-            alert('Aluno cadastrado e vinculado ao professor.');
+            alert('Aluno cadastrado com a senha padrao Aluno@123.');
         },
         onError: (errorResponse) => {
             alert(errorResponse.response?.data?.error || 'Erro ao cadastrar aluno.');
@@ -99,6 +260,7 @@ export default function ProfessorStudents() {
         }),
         onSuccess: (response) => {
             setArquivoImportacao(null);
+            setSerieImportacao('');
             setImportResult(response.data);
             queryClient.invalidateQueries({ queryKey: ['professor-dashboard', usuario.id] });
             queryClient.invalidateQueries({ queryKey: ['professor-alunos', usuario.id] });
@@ -129,14 +291,17 @@ export default function ProfessorStudents() {
         const formData = new FormData();
         formData.append('professorId', usuario.id);
         formData.append('arquivo', arquivoImportacao);
+        if (serieImportacao) {
+            formData.append('serie', serieImportacao);
+        }
         importarAlunosMutation.mutate(formData);
     };
 
     const handleBaixarModelo = () => {
         const csvContent = [
-            'nome,email,serie,senha',
-            'Aluno Exemplo,aluno.exemplo@escola.com,1a Serie,123456',
-            'Maria da Silva,maria.silva@escola.com,2a Serie,abc123'
+            'RM,Alunos',
+            '20262390153,Aluno Exemplo',
+            '20262390023,Maria da Silva'
         ].join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -155,7 +320,7 @@ export default function ProfessorStudents() {
         const matchesSerie = serieFilter === 'TODAS' || aluno.serie === serieFilter;
         const matchesSearch = !term
             || aluno.nome.toLowerCase().includes(term)
-            || aluno.email.toLowerCase().includes(term)
+            || (aluno.rm || '').toLowerCase().includes(term)
             || (aluno.serie || '').toLowerCase().includes(term);
 
         return matchesSerie && matchesSearch;
@@ -191,6 +356,14 @@ export default function ProfessorStudents() {
                 <SummaryBadge label="Horas validadas" value={`${totalHoras}h`} />
             </section>
 
+            {selectedStudentId ? (
+                <StudentPerformancePanel
+                    alunoId={selectedStudentId}
+                    professorId={usuario.id}
+                    onClose={() => setSelectedStudentId(null)}
+                />
+            ) : null}
+
             <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
                 <form
                     onSubmit={handleImportarAlunos}
@@ -201,7 +374,7 @@ export default function ProfessorStudents() {
                         Importar alunos por planilha
                     </h2>
                     <p className="mt-2 text-sm text-[var(--muted)]">
-                        Envie uma planilha `.xlsx`, `.xls` ou `.csv` com as colunas `nome`, `email`, `serie` e `senha`.
+                        Envie a planilha oficial com as colunas `RM` e `Alunos`.
                     </p>
 
                     <div className="mt-6 flex flex-wrap gap-3">
@@ -218,7 +391,8 @@ export default function ProfessorStudents() {
                     <div className="mt-6 rounded-[1.75rem] border-2 border-dashed border-[var(--line-strong)] bg-[var(--panel-soft)] p-6 transition-colors hover:border-[var(--brand-red)]">
                         <label className="flex cursor-pointer flex-col gap-3 text-sm text-[var(--muted)]">
                             <span className="font-semibold text-[var(--ink)]">Planilha de alunos</span>
-                            <span>Use as series `1a Serie`, `2a Serie` ou `3a Serie`.</span>
+                            <span>O sistema vai ler `RM` e `Alunos` automaticamente.</span>
+                            <span>Todos os alunos importados receberao a senha inicial `Aluno@123`.</span>
                             <input
                                 type="file"
                                 accept=".xlsx,.xls,.csv"
@@ -231,6 +405,17 @@ export default function ProfessorStudents() {
                                 </span>
                             ) : null}
                         </label>
+
+                        <select
+                            value={serieImportacao}
+                            onChange={(event) => setSerieImportacao(event.target.value)}
+                            className="mt-4 h-12 w-full rounded-2xl border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
+                        >
+                            <option value="">Serie opcional para toda a turma</option>
+                            {SERIE_OPTIONS.map((serie) => (
+                                <option key={serie} value={serie}>{serie}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <button
@@ -295,14 +480,14 @@ export default function ProfessorStudents() {
                             <GraduationCap className="mb-3 text-[#ffb4bc]" size={24} />
                             <h3 className="font-bold">Validacao por linha</h3>
                             <p className="mt-2 text-sm leading-6 text-[#d8dde3]">
-                                O sistema informa quais linhas entraram e quais precisam de correcao por e-mail duplicado ou serie invalida.
+                                O sistema informa quais linhas entraram e quais precisam de correcao por RM duplicado ou serie invalida.
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/6 p-5">
-                            <Mail className="mb-3 text-[#ffb4bc]" size={24} />
+                            <IdCard className="mb-3 text-[#ffb4bc]" size={24} />
                             <h3 className="font-bold">Acesso inicial definido</h3>
                             <p className="mt-2 text-sm leading-6 text-[#d8dde3]">
-                                Cada linha ja pode trazer a senha inicial do aluno para o primeiro acesso ao sistema.
+                                O aluno entra com o RM da planilha e a senha `Aluno@123`, trocando a senha no primeiro acesso.
                             </p>
                         </div>
                     </div>
@@ -328,7 +513,7 @@ export default function ProfessorStudents() {
                                     setSearchTerm(event.target.value);
                                     setCurrentPage(1);
                                 }}
-                                placeholder="Buscar por nome, e-mail ou serie"
+                                placeholder="Buscar por nome, RM ou serie"
                                 className="h-12 flex-1 bg-transparent pr-4 text-sm text-[var(--ink)] outline-none"
                             />
                         </label>
@@ -362,6 +547,7 @@ export default function ProfessorStudents() {
                                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Rejeitados</th>
                                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Horas</th>
                                         <th className="px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Certificados</th>
+                                        <th className="px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Desempenho</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -369,7 +555,7 @@ export default function ProfessorStudents() {
                                         <tr key={aluno.id} className={index !== alunosPaginados.length - 1 ? 'border-b border-[var(--line)]' : ''}>
                                             <td className="px-5 py-4">
                                                 <strong className="block text-sm font-bold text-[var(--ink)]">{aluno.nome}</strong>
-                                                <span className="mt-1 block text-sm text-[var(--muted)]">{aluno.email}</span>
+                                                <span className="mt-1 block text-sm text-[var(--muted)]">{getStudentIdentifierLabel(aluno)}</span>
                                             </td>
                                             <td className="px-4 py-4 text-sm font-semibold text-[var(--ink)]">{aluno.serie || '-'}</td>
                                             <td className="px-4 py-4 text-sm font-semibold text-[var(--ink)]">{aluno.pendentes}</td>
@@ -381,6 +567,16 @@ export default function ProfessorStudents() {
                                                     {aluno.totalCertificados} registros
                                                 </span>
                                             </td>
+                                            <td className="px-5 py-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedStudentId(aluno.id)}
+                                                    className="inline-flex items-center gap-2 rounded-2xl border border-[var(--line)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition-colors hover:border-[var(--brand-red)] hover:text-[var(--brand-red)]"
+                                                >
+                                                    <ChartColumn size={16} />
+                                                    Ver desempenho
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -389,7 +585,11 @@ export default function ProfessorStudents() {
 
                         <div className="mt-5 space-y-3 lg:hidden">
                             {alunosPaginados.map((aluno) => (
-                                <MobileStudentRow key={aluno.id} aluno={aluno} />
+                                <MobileStudentRow
+                                    key={aluno.id}
+                                    aluno={aluno}
+                                    onOpenPerformance={() => setSelectedStudentId(aluno.id)}
+                                />
                             ))}
                         </div>
 
@@ -437,7 +637,7 @@ export default function ProfessorStudents() {
                         Cadastrar aluno
                     </h2>
                     <p className="mt-2 text-sm text-[var(--muted)]">
-                        O aluno ja entra no sistema vinculado ao professor logado.
+                        O aluno entra vinculado ao professor logado, usa o RM como acesso e recebe a senha inicial `Aluno@123`.
                     </p>
 
                     <div className="mt-7 space-y-4">
@@ -450,31 +650,23 @@ export default function ProfessorStudents() {
                             className="h-14 w-full rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
                         />
                         <input
-                            type="email"
+                            type="text"
                             required
-                            value={novoAluno.email}
-                            onChange={(event) => setNovoAluno((estadoAtual) => ({ ...estadoAtual, email: event.target.value }))}
-                            placeholder="E-mail do aluno"
+                            value={novoAluno.rm}
+                            onChange={(event) => setNovoAluno((estadoAtual) => ({ ...estadoAtual, rm: event.target.value }))}
+                            placeholder="RM do aluno"
                             className="h-14 w-full rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
                         />
                         <select
-                            required
                             value={novoAluno.serie}
                             onChange={(event) => setNovoAluno((estadoAtual) => ({ ...estadoAtual, serie: event.target.value }))}
                             className="h-14 w-full rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
                         >
+                            <option value="">Sem serie definida</option>
                             {SERIE_OPTIONS.map((serie) => (
                                 <option key={serie} value={serie}>{serie}</option>
                             ))}
                         </select>
-                        <input
-                            type="password"
-                            required
-                            value={novoAluno.senha}
-                            onChange={(event) => setNovoAluno((estadoAtual) => ({ ...estadoAtual, senha: event.target.value }))}
-                            placeholder="Senha inicial"
-                            className="h-14 w-full rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 text-[var(--ink)] outline-none transition-colors focus:border-[var(--brand-red)]"
-                        />
                     </div>
 
                     <button
@@ -502,14 +694,14 @@ export default function ProfessorStudents() {
                             <GraduationCap className="mb-3 text-[#ffb4bc]" size={24} />
                             <h3 className="font-bold">Base centralizada</h3>
                             <p className="mt-2 text-sm leading-6 text-[#d8dde3]">
-                                Todo aluno criado aqui ja nasce conectado ao professor, com serie definida para facilitar filtro e acompanhamento.
+                                Todo aluno criado aqui ja nasce conectado ao professor, com RM definido e serie opcional para facilitar filtro e acompanhamento.
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/6 p-5">
-                            <Mail className="mb-3 text-[#ffb4bc]" size={24} />
+                            <IdCard className="mb-3 text-[#ffb4bc]" size={24} />
                             <h3 className="font-bold">Acesso inicial</h3>
                             <p className="mt-2 text-sm leading-6 text-[#d8dde3]">
-                                Defina um e-mail valido e uma senha inicial para o primeiro acesso do aluno.
+                                O primeiro acesso do aluno acontece com o RM cadastrado e a senha padrao `Aluno@123`.
                             </p>
                         </div>
                     </div>
