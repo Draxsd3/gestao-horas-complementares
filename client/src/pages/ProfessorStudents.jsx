@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BadgeCheck, ChartColumn, Download, FileUp, GraduationCap, IdCard, Search, Upload, UserPlus2, UsersRound, X } from 'lucide-react';
 import api from '../api/api';
@@ -218,6 +218,7 @@ function MobileStudentRow({ aluno, onOpenPerformance }) {
 export default function ProfessorStudents() {
     const queryClient = useQueryClient();
     const usuario = getStoredUser();
+    const performancePanelRef = useRef(null);
     const [novoAluno, setNovoAluno] = useState({
         nome: '',
         rm: '',
@@ -315,6 +316,22 @@ export default function ProfessorStudents() {
         window.URL.revokeObjectURL(url);
     };
 
+    const scrollToPerformancePanel = () => {
+        performancePanelRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    };
+
+    const handleOpenPerformance = (alunoId) => {
+        if (selectedStudentId === alunoId) {
+            scrollToPerformancePanel();
+            return;
+        }
+
+        setSelectedStudentId(alunoId);
+    };
+
     const alunosFiltrados = (alunos || []).filter((aluno) => {
         const term = searchTerm.trim().toLowerCase();
         const matchesSerie = serieFilter === 'TODAS' || aluno.serie === serieFilter;
@@ -333,6 +350,14 @@ export default function ProfessorStudents() {
 
     const totalPendentes = alunosFiltrados.reduce((sum, aluno) => sum + aluno.pendentes, 0);
     const totalHoras = alunosFiltrados.reduce((sum, aluno) => sum + aluno.horasValidadas, 0);
+
+    useEffect(() => {
+        if (!selectedStudentId || !performancePanelRef.current) {
+            return;
+        }
+
+        scrollToPerformancePanel();
+    }, [selectedStudentId]);
 
     if (isLoading) {
         return <TransitionLoader label="Carregando alunos..." />;
@@ -355,14 +380,6 @@ export default function ProfessorStudents() {
                 <SummaryBadge label="Pendencias" value={totalPendentes} />
                 <SummaryBadge label="Horas validadas" value={`${totalHoras}h`} />
             </section>
-
-            {selectedStudentId ? (
-                <StudentPerformancePanel
-                    alunoId={selectedStudentId}
-                    professorId={usuario.id}
-                    onClose={() => setSelectedStudentId(null)}
-                />
-            ) : null}
 
             <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
                 <form
@@ -494,6 +511,16 @@ export default function ProfessorStudents() {
                 </div>
             </section>
 
+            {selectedStudentId ? (
+                <div ref={performancePanelRef}>
+                    <StudentPerformancePanel
+                        alunoId={selectedStudentId}
+                        professorId={usuario.id}
+                        onClose={() => setSelectedStudentId(null)}
+                    />
+                </div>
+            ) : null}
+
             <section className="rounded-[1.8rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -570,7 +597,7 @@ export default function ProfessorStudents() {
                                             <td className="px-5 py-4">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setSelectedStudentId(aluno.id)}
+                                                    onClick={() => handleOpenPerformance(aluno.id)}
                                                     className="inline-flex items-center gap-2 rounded-2xl border border-[var(--line)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition-colors hover:border-[var(--brand-red)] hover:text-[var(--brand-red)]"
                                                 >
                                                     <ChartColumn size={16} />
@@ -588,7 +615,7 @@ export default function ProfessorStudents() {
                                 <MobileStudentRow
                                     key={aluno.id}
                                     aluno={aluno}
-                                    onOpenPerformance={() => setSelectedStudentId(aluno.id)}
+                                    onOpenPerformance={() => handleOpenPerformance(aluno.id)}
                                 />
                             ))}
                         </div>
