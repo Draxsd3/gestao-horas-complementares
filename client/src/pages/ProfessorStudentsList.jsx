@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowUpDown, ChartColumn, GraduationCap, IdCard, Search, UsersRound } from 'lucide-react';
+import { ArrowUpDown, IdCard, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import ProfessorStudentPerformancePanel from '../components/ProfessorStudentPerformancePanel';
@@ -9,16 +9,6 @@ import TransitionLoader from '../components/TransitionLoader';
 import { getStoredUser } from '../utils/session';
 
 const SERIE_OPTIONS = ['1a Serie', '2a Serie', '3a Serie'];
-
-function SummaryCard({ label, value, helper }) {
-    return (
-        <div className="rounded-[1.6rem] border border-[var(--line)] bg-white px-5 py-5 shadow-[0_16px_32px_rgba(44,52,61,0.06)]">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--muted)]">{label}</p>
-            <strong className="mt-3 block text-3xl font-bold text-[var(--ink)]">{value}</strong>
-            <p className="mt-2 text-sm text-[var(--muted)]">{helper}</p>
-        </div>
-    );
-}
 
 function StudentListCard({ aluno, totalHorasDisponiveis, isActive, onOpen }) {
     const percentual = totalHorasDisponiveis
@@ -166,27 +156,24 @@ export default function ProfessorStudentsList() {
         }
     }, [alunosFiltrados, selectedStudentId]);
 
-    const summary = useMemo(() => {
-        const totalAlunos = alunosFiltrados.length;
-        const totalHoras = alunosFiltrados.reduce((soma, aluno) => soma + aluno.horasValidadas, 0);
-        const totalPendentes = alunosFiltrados.reduce((soma, aluno) => soma + aluno.pendentes, 0);
-        const totalAprovados = alunosFiltrados.reduce((soma, aluno) => soma + aluno.aprovados, 0);
-
-        return {
-            totalAlunos,
-            totalHoras,
-            totalPendentes,
-            totalAprovados,
-            mediaHoras: totalAlunos ? Math.round(totalHoras / totalAlunos) : 0
-        };
-    }, [alunosFiltrados]);
+    const summary = useMemo(() => ({
+        totalAlunos: alunosFiltrados.length,
+        totalHoras: alunosFiltrados.reduce((soma, aluno) => soma + aluno.horasValidadas, 0),
+        totalPendentes: alunosFiltrados.reduce((soma, aluno) => soma + aluno.pendentes, 0),
+        totalAprovados: alunosFiltrados.reduce((soma, aluno) => soma + aluno.aprovados, 0),
+        mediaHoras: alunosFiltrados.length
+            ? Math.round(alunosFiltrados.reduce((soma, aluno) => soma + aluno.horasValidadas, 0) / alunosFiltrados.length)
+            : 0
+    }), [alunosFiltrados]);
 
     const handleOpenPerformance = (alunoId) => {
         setSelectedStudentId(alunoId);
-        mobilePanelRef.current?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
+        if (window.innerWidth < 1024) {
+            mobilePanelRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
     };
 
     if (loadingAlunos || loadingGrupos) {
@@ -205,56 +192,6 @@ export default function ProfessorStudentsList() {
                 { label: 'Gerenciar alunos', onClick: () => navigate('/professor/alunos') },
             ]}
         >
-            <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr_0.8fr]">
-                <div className="rounded-[2rem] border border-white/70 bg-[linear-gradient(140deg,#4a525d_0%,#2b3138_100%)] p-7 text-white shadow-[0_28px_65px_rgba(34,40,48,0.24)]">
-                    <div className="flex items-center gap-3 text-[#ffd7dc]">
-                        <UsersRound size={20} />
-                        <p className="text-sm font-semibold uppercase tracking-[0.22em]">Visao da turma</p>
-                    </div>
-                    <h1 className="mt-4 max-w-2xl text-3xl font-bold leading-tight">
-                        Uma tela pensada para enxergar quem esta avancando e quem ainda precisa de atencao.
-                    </h1>
-                    <p className="mt-4 max-w-2xl text-sm leading-6 text-[#d4d9de]">
-                        A listagem concentra busca, ordenacao e leitura rapida do progresso, enquanto o painel lateral mostra
-                        em detalhes os grupos concluidos, pendencias e certificados de cada aluno.
-                    </p>
-                </div>
-
-                <SummaryCard
-                    label="Alunos visiveis"
-                    value={summary.totalAlunos}
-                    helper="alunos dentro do filtro atual"
-                />
-                <SummaryCard
-                    label="Media aprovada"
-                    value={`${summary.mediaHoras}h`}
-                    helper="media de horas aprovadas por aluno"
-                />
-            </section>
-
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <SummaryCard
-                    label="Horas validadas"
-                    value={`${summary.totalHoras}h`}
-                    helper="carga aprovada na turma filtrada"
-                />
-                <SummaryCard
-                    label="Pendencias"
-                    value={summary.totalPendentes}
-                    helper="certificados aguardando analise"
-                />
-                <SummaryCard
-                    label="Aprovados"
-                    value={summary.totalAprovados}
-                    helper="certificados validados pelo professor"
-                />
-                <SummaryCard
-                    label="Carga alvo"
-                    value={`${totalHorasDisponiveis}h`}
-                    helper="meta configurada em todos os grupos"
-                />
-            </section>
-
             <div ref={mobilePanelRef} className="lg:hidden">
                 {selectedStudentId ? (
                     <ProfessorStudentPerformancePanel
@@ -265,13 +202,21 @@ export default function ProfessorStudentsList() {
                 ) : null}
             </div>
 
-            <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] xl:grid-cols-[1.1fr_0.9fr]">
-                <div className="space-y-5">
+            <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] xl:grid-cols-[1.1fr_0.9fr] lg:items-start">
+                <div className="space-y-5 lg:flex lg:min-h-[calc(100vh-11rem)] lg:max-h-[calc(100vh-11rem)] lg:flex-col lg:overflow-hidden">
                     <section className="rounded-[1.8rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
                         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                             <div>
                                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-red)]">Leitura da turma</p>
                                 <h2 className="mt-2 text-2xl font-bold text-[var(--ink)]">Listagem com filtros e prioridade</h2>
+                                <div className="mt-3 flex flex-wrap gap-2 text-sm text-[var(--muted)]">
+                                    <span className="rounded-full bg-[var(--panel-soft)] px-3 py-2">{summary.totalAlunos} aluno(s)</span>
+                                    <span className="rounded-full bg-[var(--panel-soft)] px-3 py-2">{summary.totalHoras}h validadas</span>
+                                    <span className="rounded-full bg-[var(--panel-soft)] px-3 py-2">{summary.totalPendentes} pendencia(s)</span>
+                                    <span className="rounded-full bg-[var(--panel-soft)] px-3 py-2">{summary.totalAprovados} aprovado(s)</span>
+                                    <span className="rounded-full bg-[var(--panel-soft)] px-3 py-2">media {summary.mediaHoras}h</span>
+                                    <span className="rounded-full bg-[var(--panel-soft)] px-3 py-2">meta {totalHorasDisponiveis}h</span>
+                                </div>
                             </div>
 
                             <div className="flex flex-col gap-3 xl:max-w-3xl xl:flex-row">
@@ -317,7 +262,7 @@ export default function ProfessorStudentsList() {
                     </section>
 
                     {alunosFiltrados.length ? (
-                        <div className="space-y-4">
+                        <div className="space-y-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
                             {alunosFiltrados.map((aluno) => (
                                 <StudentListCard
                                     key={aluno.id}
@@ -335,8 +280,8 @@ export default function ProfessorStudentsList() {
                     )}
                 </div>
 
-                <div className="hidden lg:block">
-                    <div className="sticky top-8">
+                <div className="hidden lg:block lg:min-h-[calc(100vh-11rem)] lg:max-h-[calc(100vh-11rem)]">
+                    <div className="lg:h-full lg:overflow-y-auto lg:pr-2">
                         {selectedStudentId ? (
                             <ProfessorStudentPerformancePanel
                                 alunoId={selectedStudentId}
@@ -349,30 +294,6 @@ export default function ProfessorStudentsList() {
                             </div>
                         )}
                     </div>
-                </div>
-            </section>
-
-            <section className="grid gap-4 lg:grid-cols-3">
-                <div className="rounded-[1.8rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
-                    <UsersRound className="text-[var(--brand-red)]" size={22} />
-                    <h3 className="mt-4 text-lg font-bold text-[var(--ink)]">Comparacao mais rapida</h3>
-                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        A turma fica em uma listagem continua, o que ajuda a bater o olho em horas, pendencias e volume de certificados.
-                    </p>
-                </div>
-                <div className="rounded-[1.8rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
-                    <ChartColumn className="text-[var(--brand-red)]" size={22} />
-                    <h3 className="mt-4 text-lg font-bold text-[var(--ink)]">Desempenho ao lado</h3>
-                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        No desktop, o desempenho detalhado permanece visivel ao lado da lista, facilitando a consulta sem perder contexto.
-                    </p>
-                </div>
-                <div className="rounded-[1.8rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
-                    <GraduationCap className="text-[var(--brand-red)]" size={22} />
-                    <h3 className="mt-4 text-lg font-bold text-[var(--ink)]">Foco em acompanhamento</h3>
-                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        A tela de listagem fica voltada para acompanhamento da turma, enquanto a tela de alunos continua cuidando do cadastro e importacao.
-                    </p>
                 </div>
             </section>
         </ProfessorLayout>
