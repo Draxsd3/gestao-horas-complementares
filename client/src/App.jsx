@@ -9,6 +9,7 @@ import ProfessorDashboard from './pages/ProfessorDashboard';
 import ProfessorStudents from './pages/ProfessorStudents';
 import ProfessorStudentsList from './pages/ProfessorStudentsList';
 import ProfessorCertificates from './pages/ProfessorCertificates';
+import ProfessorProfile from './pages/ProfessorProfile';
 import FirstAccessPassword from './pages/FirstAccessPassword';
 import { getStoredUser, requiresPasswordChange } from './utils/session';
 
@@ -33,6 +34,7 @@ function App() {
       <Route path="/professor/alunos" element={<ProfessorStudents />} />
       <Route path="/professor/alunos/listagem" element={<ProfessorStudentsList />} />
       <Route path="/professor/certificados" element={<ProfessorCertificates />} />
+      <Route path="/professor/perfil" element={<ProfessorProfile />} />
       <Route path="/grupos" element={<StudentFirstAccessGuard><GruposHoras /></StudentFirstAccessGuard>} />
       <Route path="/enviar" element={<StudentFirstAccessGuard><EnviarCertificado /></StudentFirstAccessGuard>} />
       <Route path="/perfil" element={<StudentFirstAccessGuard><Perfil /></StudentFirstAccessGuard>} />

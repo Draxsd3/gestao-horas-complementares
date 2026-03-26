@@ -13,8 +13,9 @@ export default function InstitutionalHeader({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const usuario = getStoredUser();
-  const profileNavItem = navItems.find((item) => item.label === 'Perfil');
-  const mobileNavItems = navItems.filter((item) => item.label !== 'Perfil');
+  const isProfileItem = (item) => item.label?.toLowerCase().includes('perfil');
+  const profileNavItem = navItems.find((item) => isProfileItem(item));
+  const mobileNavItems = navItems.filter((item) => !isProfileItem(item));
   const profileImage = usuario ? localStorage.getItem(`usuario-imagem-${usuario.id}`) || '' : '';
 
   const handleItemClick = (onClick) => {
