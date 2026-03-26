@@ -240,7 +240,7 @@ export default function ProfessorStudents() {
             title="Alunos vinculados"
             subtitle="Cadastre e acompanhe os alunos vinculados ao professor."
             actionItems={[
-                { label: 'Ver listagem', onClick: () => navigate('/professor/alunos/listagem') },
+                { label: 'Desempenho', onClick: () => navigate('/professor/alunos/listagem') },
                 { label: 'Cadastrar aluno', onClick: () => document.getElementById('cadastro-aluno')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
             ]}
         >
