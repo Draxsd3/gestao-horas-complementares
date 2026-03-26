@@ -9,7 +9,8 @@ export default function ProfessorLayout({
     title,
     subtitle,
     children,
-    actionItems = []
+    actionItems = [],
+    contentClassName = 'mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 pb-16 pt-8 md:px-6 lg:px-8'
 }) {
     const navigate = useNavigate();
     const usuario = getStoredUser();
@@ -54,7 +55,7 @@ export default function ProfessorLayout({
                 actionItems={headerActionItems}
             />
 
-            <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 pb-16 pt-8 md:px-6 lg:px-8">
+            <main className={contentClassName}>
                 {children}
             </main>
 
