@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowUpDown, ChartColumn, IdCard, Search, UsersRound } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowUpDown, IdCard, Search } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import ProfessorStudentPerformancePanel from '../components/ProfessorStudentPerformancePanel';
 import ProfessorLayout from '../components/ProfessorLayout';
@@ -76,7 +76,6 @@ function StudentRow({ aluno, totalHorasDisponiveis, isActive, onOpen }) {
 }
 
 export default function ProfessorStudentsList() {
-    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const usuario = getStoredUser();
     const mobilePanelRef = useRef(null);
@@ -201,9 +200,6 @@ export default function ProfessorStudentsList() {
             title="Listagem da turma"
             subtitle="Visualize a turma com mais clareza e abra o desempenho individual de cada aluno."
             contentClassName="mx-auto w-full max-w-[1540px] flex-1 space-y-8 px-4 pb-16 pt-8 md:px-6 xl:px-8 2xl:max-w-[1720px]"
-            actionItems={[
-                { label: 'Gerenciar alunos', onClick: () => navigate('/professor/alunos') },
-            ]}
         >
             <section className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)] lg:p-6 xl:p-7">
                 <div className="flex flex-col gap-6 2xl:grid 2xl:grid-cols-[minmax(0,1fr)_minmax(720px,0.95fr)] 2xl:items-center">

@@ -72,10 +72,6 @@ export default function ProfessorDashboard() {
         <ProfessorLayout
             title="Painel do professor"
             subtitle={`Ola, ${usuario?.nome}. Acompanhe o andamento das analises e da turma vinculada.`}
-            actionItems={[
-                { label: 'Listagem da turma', onClick: () => navigate('/professor/alunos/listagem') },
-                { label: 'Cadastrar aluno', onClick: () => navigate('/professor/alunos') },
-            ]}
         >
             <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] lg:items-center">
                 <div className="rounded-[2rem] border border-white/70 bg-[linear-gradient(135deg,#4a525d_0%,#2b3138_100%)] p-7 text-white shadow-[0_28px_65px_rgba(34,40,48,0.24)]">
