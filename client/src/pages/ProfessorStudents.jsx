@@ -239,10 +239,6 @@ export default function ProfessorStudents() {
         <ProfessorLayout
             title="Alunos vinculados"
             subtitle="Cadastre e acompanhe os alunos vinculados ao professor."
-            actionItems={[
-                { label: 'Desempenho', onClick: () => navigate('/professor/alunos/listagem') },
-                { label: 'Cadastrar aluno', onClick: () => document.getElementById('cadastro-aluno')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
-            ]}
         >
             <section className="grid gap-4 md:grid-cols-3">
                 <SummaryBadge label="Alunos exibidos" value={alunosFiltrados.length} />

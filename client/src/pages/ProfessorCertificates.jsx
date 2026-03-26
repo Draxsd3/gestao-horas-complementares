@@ -12,7 +12,6 @@ import api from '../api/api';
 import ProfessorLayout from '../components/ProfessorLayout';
 import TransitionLoader from '../components/TransitionLoader';
 import { getStoredUser } from '../utils/session';
-import { useNavigate } from 'react-router-dom';
 
 function getStatusLabel(status) {
     if (status === 'APROVADO') return 'Aprovado';
@@ -220,7 +219,6 @@ function CertificateCard({
 export default function ProfessorCertificates() {
     const queryClient = useQueryClient();
     const usuario = getStoredUser();
-    const navigate = useNavigate();
     const [avaliacoes, setAvaliacoes] = useState({});
     const [editingIds, setEditingIds] = useState({});
     const [searchTerm, setSearchTerm] = useState('');
@@ -346,9 +344,6 @@ export default function ProfessorCertificates() {
         <ProfessorLayout
             title="Certificados recebidos"
             subtitle="Analise comprovantes enviados, ajuste o enquadramento e valide horas."
-            actionItems={[
-                { label: 'Cadastrar aluno', onClick: () => navigate('/professor/alunos') },
-            ]}
         >
             <section className="rounded-[2rem] border border-white/70 bg-[linear-gradient(145deg,#4b545f_0%,#343b44_100%)] p-8 text-white shadow-[0_28px_60px_rgba(36,42,50,0.24)]">
                 <div className="grid gap-4 md:grid-cols-3">
