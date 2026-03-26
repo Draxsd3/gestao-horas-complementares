@@ -14,8 +14,10 @@ export default function InstitutionalHeader({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const usuario = getStoredUser();
   const isProfileItem = (item) => item.label?.toLowerCase().includes('perfil');
-  const profileNavItem = navItems.find((item) => isProfileItem(item));
+  const profileNavItem = navItems.find((item) => isProfileItem(item))
+    || actionItems.find((item) => isProfileItem(item));
   const mobileNavItems = navItems.filter((item) => !isProfileItem(item));
+  const mobileActionItems = actionItems.filter((item) => !isProfileItem(item));
   const profileImage = usuario ? localStorage.getItem(`usuario-imagem-${usuario.id}`) || '' : '';
 
   const handleItemClick = (onClick) => {
@@ -167,7 +169,7 @@ export default function InstitutionalHeader({
                 <div>
                   <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)]">Acoes</p>
                   <div className="space-y-2">
-                    {actionItems.map((item) => (
+                    {mobileActionItems.map((item) => (
                       <button
                         key={item.label}
                         type="button"
