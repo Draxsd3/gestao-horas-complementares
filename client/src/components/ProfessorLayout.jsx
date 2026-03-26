@@ -41,6 +41,7 @@ export default function ProfessorLayout({
         { label: 'Desempenho', onClick: () => navigate('/professor/alunos/listagem') },
         { label: 'Alunos', onClick: () => navigate('/professor/alunos') },
         { label: 'Certificados', onClick: () => navigate('/professor/certificados') },
+        { label: 'Meu perfil', onClick: () => navigate('/professor/perfil') },
     ];
 
     return (
