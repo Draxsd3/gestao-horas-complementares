@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUpDown, ChartColumn, IdCard, Search, UsersRound } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/api';
 import ProfessorStudentPerformancePanel from '../components/ProfessorStudentPerformancePanel';
 import ProfessorLayout from '../components/ProfessorLayout';
@@ -77,6 +77,7 @@ function StudentRow({ aluno, totalHorasDisponiveis, isActive, onOpen }) {
 
 export default function ProfessorStudentsList() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const usuario = getStoredUser();
     const mobilePanelRef = useRef(null);
     const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -142,6 +143,7 @@ export default function ProfessorStudentsList() {
         totalPendentes: alunosFiltrados.reduce((soma, aluno) => soma + aluno.pendentes, 0),
         totalAprovados: alunosFiltrados.reduce((soma, aluno) => soma + aluno.aprovados, 0)
     }), [alunosFiltrados]);
+    const selectedStudentParam = searchParams.get('aluno');
 
     useEffect(() => {
         if (!alunosFiltrados.length) {
@@ -149,12 +151,31 @@ export default function ProfessorStudentsList() {
             return;
         }
 
+        if (selectedStudentParam) {
+            const requestedStudent = alunosFiltrados.find((aluno) => String(aluno.id) === selectedStudentParam);
+
+            if (requestedStudent) {
+                if (requestedStudent.id !== selectedStudentId) {
+                    setSelectedStudentId(requestedStudent.id);
+                }
+
+                const nextSearchParams = new URLSearchParams(searchParams);
+                nextSearchParams.delete('aluno');
+                setSearchParams(nextSearchParams, { replace: true });
+                return;
+            }
+
+            const nextSearchParams = new URLSearchParams(searchParams);
+            nextSearchParams.delete('aluno');
+            setSearchParams(nextSearchParams, { replace: true });
+        }
+
         const hasSelection = alunosFiltrados.some((aluno) => aluno.id === selectedStudentId);
 
         if (!hasSelection) {
             setSelectedStudentId(alunosFiltrados[0].id);
         }
-    }, [alunosFiltrados, selectedStudentId]);
+    }, [alunosFiltrados, searchParams, selectedStudentId, selectedStudentParam, setSearchParams]);
 
     const handleOpenPerformance = (alunoId) => {
         setSelectedStudentId(alunoId);
