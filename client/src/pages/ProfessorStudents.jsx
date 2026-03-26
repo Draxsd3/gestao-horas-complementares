@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BadgeCheck, ChartColumn, Download, FileUp, GraduationCap, IdCard, Search, Upload, UserPlus2, UsersRound, X } from 'lucide-react';
+import { ChartColumn, Download, FileUp, GraduationCap, IdCard, Search, Upload, UserPlus2, UsersRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import ProfessorLayout from '../components/ProfessorLayout';
@@ -59,118 +59,6 @@ function ProgressGroupCard({ grupo }) {
     );
 }
 
-function StudentPerformancePanel({ alunoId, professorId, onClose }) {
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['professor-aluno-desempenho', professorId, alunoId],
-        queryFn: async () => {
-            const response = await api.get(`/professor/alunos/${professorId}/${alunoId}/desempenho`);
-            return response.data;
-        },
-        enabled: !!alunoId && !!professorId
-    });
-
-    return (
-        <section className="rounded-[1.8rem] border border-[var(--line)] bg-white p-6 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--brand-red)]">Desempenho individual</p>
-                    <h2 className="mt-2 text-2xl font-bold text-[var(--ink)]">
-                        {data?.aluno?.nome || 'Carregando aluno...'}
-                    </h2>
-                    <p className="mt-2 text-sm text-[var(--muted)]">
-                        {data?.aluno?.rm ? `RM ${data.aluno.rm}` : 'Aguarde o carregamento dos dados.'}
-                        {data?.aluno?.serie ? ` · ${data.aluno.serie}` : ''}
-                    </p>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[var(--line)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition-colors hover:border-[var(--brand-red)] hover:text-[var(--brand-red)]"
-                >
-                    <X size={16} />
-                    Fechar
-                </button>
-            </div>
-
-            {isLoading ? (
-                <div className="mt-6 rounded-[1.5rem] bg-[var(--panel-soft)] p-6 text-center text-[var(--muted)]">
-                    Carregando desempenho do aluno...
-                </div>
-            ) : null}
-
-            {error ? (
-                <div className="mt-6 rounded-[1.5rem] border border-[var(--brand-red)] bg-[var(--brand-red-soft)] p-6 text-center text-[var(--brand-red)]">
-                    Erro ao carregar desempenho do aluno.
-                </div>
-            ) : null}
-
-            {!isLoading && !error && data ? (
-                <>
-                    <div className="mt-6 grid gap-4 md:grid-cols-4">
-                        <SummaryBadge label="Progresso geral" value={`${data.resumo.percentualGeral}%`} />
-                        <SummaryBadge label="Horas aprovadas" value={`${data.resumo.totalHorasAprovadas}h`} />
-                        <SummaryBadge label="Grupos concluidos" value={data.resumo.gruposConcluidos} />
-                        <SummaryBadge label="Pendencias" value={data.resumo.gruposPendentes} />
-                    </div>
-
-                    <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                        <div>
-                            <div className="mb-4 flex items-center gap-3">
-                                <ChartColumn className="text-[var(--brand-red)]" size={20} />
-                                <h3 className="text-lg font-bold text-[var(--ink)]">Progresso por grupo</h3>
-                            </div>
-                            <div className="grid gap-4">
-                                {data.grupos.map((grupo) => (
-                                    <ProgressGroupCard key={grupo.id} grupo={grupo} />
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="rounded-[1.6rem] border border-[var(--line)] bg-[var(--panel-soft)] p-5">
-                            <div className="mb-4 flex items-center gap-3">
-                                <BadgeCheck className="text-[var(--brand-red)]" size={20} />
-                                <h3 className="text-lg font-bold text-[var(--ink)]">O que falta para este aluno</h3>
-                            </div>
-
-                            <div className="space-y-3">
-                                {data.pendencias.length ? data.pendencias.map((pendencia) => (
-                                    <div key={pendencia.id} className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
-                                            Grupo {pendencia.numero}
-                                        </p>
-                                        <p className="mt-2 text-sm font-semibold text-[var(--ink)]">{pendencia.descricao}</p>
-                                        <p className="mt-2 text-sm text-[var(--muted)]">Faltam {pendencia.horasFaltantes}h para completar.</p>
-                                    </div>
-                                )) : (
-                                    <div className="rounded-2xl bg-white px-4 py-5 text-sm font-semibold text-[#2f8f57] shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                        Este aluno ja completou todos os grupos de horas configurados.
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mt-5 grid gap-3 md:grid-cols-3 lg:grid-cols-1">
-                                <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Certificados pendentes</p>
-                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{data.resumo.pendentes}</strong>
-                                </div>
-                                <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Aprovados</p>
-                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{data.resumo.aprovados}</strong>
-                                </div>
-                                <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Rejeitados</p>
-                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{data.resumo.rejeitados}</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </>
-            ) : null}
-        </section>
-    );
-}
-
 function MobileStudentRow({ aluno, onOpenPerformance }) {
     return (
         <article className="rounded-[1.5rem] border border-[var(--line)] bg-white p-4 shadow-[0_14px_28px_rgba(44,52,61,0.05)]">
@@ -220,7 +108,6 @@ export default function ProfessorStudents() {
     const queryClient = useQueryClient();
     const usuario = getStoredUser();
     const navigate = useNavigate();
-    const performancePanelRef = useRef(null);
     const [novoAluno, setNovoAluno] = useState({
         nome: '',
         rm: '',
@@ -232,7 +119,6 @@ export default function ProfessorStudents() {
     const [arquivoImportacao, setArquivoImportacao] = useState(null);
     const [serieImportacao, setSerieImportacao] = useState('');
     const [importResult, setImportResult] = useState(null);
-    const [selectedStudentId, setSelectedStudentId] = useState(null);
 
     const { data: alunos, isLoading, error } = useQuery({
         queryKey: ['professor-alunos', usuario?.id],
@@ -318,20 +204,8 @@ export default function ProfessorStudents() {
         window.URL.revokeObjectURL(url);
     };
 
-    const scrollToPerformancePanel = () => {
-        performancePanelRef.current?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-    };
-
     const handleOpenPerformance = (alunoId) => {
-        if (selectedStudentId === alunoId) {
-            scrollToPerformancePanel();
-            return;
-        }
-
-        setSelectedStudentId(alunoId);
+        navigate(`/professor/alunos/listagem?aluno=${alunoId}`);
     };
 
     const alunosFiltrados = (alunos || []).filter((aluno) => {
@@ -353,14 +227,6 @@ export default function ProfessorStudents() {
     const totalPendentes = alunosFiltrados.reduce((sum, aluno) => sum + aluno.pendentes, 0);
     const totalHoras = alunosFiltrados.reduce((sum, aluno) => sum + aluno.horasValidadas, 0);
 
-    useEffect(() => {
-        if (!selectedStudentId || !performancePanelRef.current) {
-            return;
-        }
-
-        scrollToPerformancePanel();
-    }, [selectedStudentId]);
-
     if (isLoading) {
         return <TransitionLoader label="Carregando alunos..." />;
     }
@@ -374,7 +240,7 @@ export default function ProfessorStudents() {
             title="Alunos vinculados"
             subtitle="Cadastre e acompanhe os alunos vinculados ao professor."
             actionItems={[
-                { label: 'Ver listagem', onClick: () => navigate('/professor/alunos/listagem') },
+                { label: 'Desempenho', onClick: () => navigate('/professor/alunos/listagem') },
                 { label: 'Cadastrar aluno', onClick: () => document.getElementById('cadastro-aluno')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
             ]}
         >
@@ -513,16 +379,6 @@ export default function ProfessorStudents() {
                     </div>
                 </div>
             </section>
-
-            {selectedStudentId ? (
-                <div ref={performancePanelRef}>
-                    <StudentPerformancePanel
-                        alunoId={selectedStudentId}
-                        professorId={usuario.id}
-                        onClose={() => setSelectedStudentId(null)}
-                    />
-                </div>
-            ) : null}
 
             <section className="rounded-[1.8rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
