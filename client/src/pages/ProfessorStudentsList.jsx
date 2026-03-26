@@ -25,13 +25,13 @@ function StudentRow({ aluno, totalHorasDisponiveis, isActive, onOpen }) {
         <button
             type="button"
             onClick={onOpen}
-            className={`w-full rounded-[1.5rem] border p-5 text-left transition-all ${
+            className={`w-full rounded-[1.7rem] border p-5 text-left transition-all lg:p-6 ${
                 isActive
                     ? 'border-[var(--brand-red)] bg-[var(--brand-red-soft)] shadow-[0_18px_34px_rgba(206,17,38,0.10)]'
                     : 'border-[var(--line)] bg-white shadow-[0_16px_30px_rgba(44,52,61,0.05)] hover:border-[var(--brand-red)]'
             }`}
         >
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-center 2xl:justify-between">
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
                         <h3 className="text-lg font-bold text-[var(--ink)]">{aluno.nome}</h3>
@@ -45,7 +45,7 @@ function StudentRow({ aluno, totalHorasDisponiveis, isActive, onOpen }) {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:min-w-[26rem]">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4 2xl:min-w-[31rem]">
                     <div className="rounded-2xl bg-[var(--panel-soft)] px-4 py-3">
                         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">Horas</p>
                         <strong className="mt-1 block text-lg font-bold text-[var(--ink)]">{aluno.horasValidadas}h</strong>
@@ -159,7 +159,7 @@ export default function ProfessorStudentsList() {
     const handleOpenPerformance = (alunoId) => {
         setSelectedStudentId(alunoId);
 
-        if (window.innerWidth < 1024) {
+        if (window.innerWidth < 1280) {
             mobilePanelRef.current?.scrollIntoView({
                 behavior: 'smooth',
                 block: 'start'
@@ -179,13 +179,14 @@ export default function ProfessorStudentsList() {
         <ProfessorLayout
             title="Listagem da turma"
             subtitle="Visualize a turma com mais clareza e abra o desempenho individual de cada aluno."
+            contentClassName="mx-auto w-full max-w-[1540px] flex-1 space-y-8 px-4 pb-16 pt-8 md:px-6 xl:px-8 2xl:max-w-[1720px]"
             actionItems={[
                 { label: 'Gerenciar alunos', onClick: () => navigate('/professor/alunos') },
             ]}
         >
-            <section className="rounded-[1.8rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)]">
-                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div>
+            <section className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-[0_18px_35px_rgba(44,52,61,0.06)] lg:p-6 xl:p-7">
+                <div className="flex flex-col gap-6 2xl:grid 2xl:grid-cols-[minmax(0,1fr)_minmax(720px,0.95fr)] 2xl:items-center">
+                    <div className="max-w-3xl">
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-red)]">Listagem da turma</p>
                         <h2 className="mt-2 text-2xl font-bold text-[var(--ink)]">Alunos com filtros e desempenho</h2>
                         <div className="mt-3 flex flex-wrap gap-2 text-sm text-[var(--muted)]">
@@ -197,7 +198,7 @@ export default function ProfessorStudentsList() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-3 xl:max-w-3xl xl:flex-row">
+                    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(220px,0.72fr)_minmax(270px,0.9fr)] 2xl:w-full">
                         <label className="flex flex-1 items-center overflow-hidden rounded-full border border-[var(--line)] bg-[var(--panel-soft)]">
                             <span className="flex h-12 w-12 items-center justify-center text-[var(--muted)]">
                                 <Search size={18} />
@@ -227,7 +228,7 @@ export default function ProfessorStudentsList() {
                             <select
                                 value={sortBy}
                                 onChange={(event) => setSortBy(event.target.value)}
-                                className="h-12 bg-transparent outline-none"
+                                className="h-12 min-w-0 flex-1 bg-transparent outline-none"
                             >
                                 <option value="progresso">Ordenar por progresso</option>
                                 <option value="horas">Ordenar por horas</option>
@@ -239,7 +240,7 @@ export default function ProfessorStudentsList() {
                 </div>
             </section>
 
-            <div ref={mobilePanelRef} className="lg:hidden">
+            <div ref={mobilePanelRef} className="xl:hidden">
                 {selectedStudentId ? (
                     <ProfessorStudentPerformancePanel
                         alunoId={selectedStudentId}
@@ -249,7 +250,7 @@ export default function ProfessorStudentsList() {
                 ) : null}
             </div>
 
-            <section className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
+            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(430px,0.88fr)] xl:items-start 2xl:grid-cols-[minmax(0,1.28fr)_minmax(500px,0.92fr)]">
                 <div className="space-y-4">
                     {alunosFiltrados.length ? (
                         alunosFiltrados.map((aluno) => (
@@ -268,7 +269,7 @@ export default function ProfessorStudentsList() {
                     )}
                 </div>
 
-                <div className="hidden lg:block">
+                <div className="hidden xl:block">
                     {selectedStudentId ? (
                         <div className="sticky top-8">
                             <ProfessorStudentPerformancePanel
