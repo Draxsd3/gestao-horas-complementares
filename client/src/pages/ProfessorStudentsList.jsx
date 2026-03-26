@@ -31,7 +31,7 @@ function StudentRow({ aluno, totalHorasDisponiveis, isActive, onOpen }) {
                     : 'border-[var(--line)] bg-white shadow-[0_16px_30px_rgba(44,52,61,0.05)] hover:border-[var(--brand-red)]'
             }`}
         >
-            <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-center 2xl:justify-between">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
                         <h3 className="text-lg font-bold text-[var(--ink)]">{aluno.nome}</h3>
@@ -45,7 +45,7 @@ function StudentRow({ aluno, totalHorasDisponiveis, isActive, onOpen }) {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4 2xl:min-w-[31rem]">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:min-w-[25rem] 2xl:min-w-[26.5rem]">
                     <div className="rounded-2xl bg-[var(--panel-soft)] px-4 py-3">
                         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">Horas</p>
                         <strong className="mt-1 block text-lg font-bold text-[var(--ink)]">{aluno.horasValidadas}h</strong>
@@ -250,7 +250,7 @@ export default function ProfessorStudentsList() {
                 ) : null}
             </div>
 
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(430px,0.88fr)] xl:items-start 2xl:grid-cols-[minmax(0,1.28fr)_minmax(500px,0.92fr)]">
+            <section className="grid gap-6 xl:grid-cols-[minmax(0,0.96fr)_minmax(520px,1.12fr)] xl:items-start 2xl:grid-cols-[minmax(0,0.92fr)_minmax(620px,1.2fr)]">
                 <div className="space-y-4">
                     {alunosFiltrados.length ? (
                         alunosFiltrados.map((aluno) => (
