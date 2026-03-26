@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { BadgeCheck, ChartColumn, X } from 'lucide-react';
+import { ChartColumn, X } from 'lucide-react';
 import api from '../api/api';
 
 function SummaryBadge({ label, value }) {
@@ -109,55 +109,15 @@ export default function ProfessorStudentPerformancePanel({
                         <SummaryBadge label="Pendencias" value={data.resumo.gruposPendentes} />
                     </div>
 
-                    <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                        <div>
-                            <div className="mb-4 flex items-center gap-3">
-                                <ChartColumn className="text-[var(--brand-red)]" size={20} />
-                                <h3 className="text-lg font-bold text-[var(--ink)]">Progresso por grupo</h3>
-                            </div>
-                            <div className="grid gap-4">
-                                {data.grupos.map((grupo) => (
-                                    <ProgressGroupCard key={grupo.id} grupo={grupo} />
-                                ))}
-                            </div>
+                    <div className="mt-6">
+                        <div className="mb-4 flex items-center gap-3">
+                            <ChartColumn className="text-[var(--brand-red)]" size={20} />
+                            <h3 className="text-lg font-bold text-[var(--ink)]">Progresso por grupo</h3>
                         </div>
-
-                        <div className="rounded-[1.6rem] border border-[var(--line)] bg-[var(--panel-soft)] p-5">
-                            <div className="mb-4 flex items-center gap-3">
-                                <BadgeCheck className="text-[var(--brand-red)]" size={20} />
-                                <h3 className="text-lg font-bold text-[var(--ink)]">O que falta para este aluno</h3>
-                            </div>
-
-                            <div className="space-y-3">
-                                {data.pendencias.length ? data.pendencias.map((pendencia) => (
-                                    <div key={pendencia.id} className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
-                                            Grupo {pendencia.numero}
-                                        </p>
-                                        <p className="mt-2 text-sm font-semibold text-[var(--ink)]">{pendencia.descricao}</p>
-                                        <p className="mt-2 text-sm text-[var(--muted)]">Faltam {pendencia.horasFaltantes}h para completar.</p>
-                                    </div>
-                                )) : (
-                                    <div className="rounded-2xl bg-white px-4 py-5 text-sm font-semibold text-[#2f8f57] shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                        Este aluno ja completou todos os grupos de horas configurados.
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mt-5 grid gap-3 md:grid-cols-3 lg:grid-cols-1">
-                                <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Certificados pendentes</p>
-                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{data.resumo.pendentes}</strong>
-                                </div>
-                                <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Aprovados</p>
-                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{data.resumo.aprovados}</strong>
-                                </div>
-                                <div className="rounded-2xl bg-white px-4 py-4 shadow-[0_10px_24px_rgba(44,52,61,0.05)]">
-                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Rejeitados</p>
-                                    <strong className="mt-2 block text-2xl font-bold text-[var(--ink)]">{data.resumo.rejeitados}</strong>
-                                </div>
-                            </div>
+                        <div className="grid gap-4">
+                            {data.grupos.map((grupo) => (
+                                <ProgressGroupCard key={grupo.id} grupo={grupo} />
+                            ))}
                         </div>
                     </div>
                 </>
