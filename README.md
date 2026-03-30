@@ -1,306 +1,246 @@
-# Gestao de Horas Complementares
+# Gestão de Horas Complementares — Centro Paula Souza
 
-<p align="center">
-  Plataforma web para instituicoes de ensino organizarem o envio, a analise e a validacao de horas complementares de forma clara, acompanhavel e centralizada.
-</p>
+> Plataforma web para controle de horas complementares em instituições
+> de ensino técnico: envio de comprovantes, análise pedagógica e
+> acompanhamento de progresso por perfil de acesso.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite">
-  <img src="https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white" alt="Node.js">
-  <img src="https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white" alt="Express">
-  <img src="https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma&logoColor=white" alt="Prisma">
-  <img src="https://img.shields.io/badge/PostgreSQL-Supabase-336791?logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/TailwindCSS-4-06B6D4?logo=tailwindcss&logoColor=white" alt="TailwindCSS">
-</p>
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=flat-square&logo=vite&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?style=flat-square&logo=express&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=flat-square&logo=prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-336791?style=flat-square&logo=postgresql&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![License](https://img.shields.io/badge/Uso-Educacional-blue?style=flat-square)
 
-## Visao Geral
+---
 
-O **Gestao de Horas Complementares** foi pensado para escolas que precisam acompanhar atividades extracurriculares de seus alunos com mais previsibilidade, menos retrabalho e melhor rastreabilidade.
+## Sobre o Projeto
 
-Em vez de concentrar o processo em planilhas soltas, e-mails e conferencias manuais, o sistema organiza tudo em um fluxo unico:
+Desenvolvido como solução para o **Centro Paula Souza**, o sistema
+substitui planilhas e e-mails no controle de horas complementares,
+centralizando o fluxo em uma plataforma com perfis, rastreabilidade
+e histórico de decisões pedagógicas.
 
-- o aluno envia o comprovante
-- o professor analisa o documento
-- o sistema registra a decisao
-- as horas validadas passam a compor o progresso do aluno por grupo
+O aluno envia o comprovante. O professor analisa e decide.
+O sistema registra tudo — aprovações, rejeições, observações e progresso.
 
-O resultado e um ambiente em que a instituicao consegue enxergar:
+---
 
-- quem enviou certificados
-- o que ainda esta pendente
-- quais horas ja foram aprovadas
-- em qual grupo cada atividade foi contabilizada
-- quais observacoes foram registradas durante a analise
-
-## Proposta do Sistema
-
-O projeto atende uma necessidade comum em instituicoes de ensino tecnico e profissionalizante: controlar horas complementares sem perder transparencia para o aluno nem controle pedagogico para a equipe responsavel.
-
-O sistema foi desenhado para:
-
-- reduzir erros no lancamento de horas
-- centralizar comprovantes em um unico ambiente
-- permitir acompanhamento por perfil de acesso
-- facilitar a organizacao por categorias de horas
-- dar visibilidade ao historico de decisao sobre cada certificado
-
-## Como Funciona na Pratica
-
-### 1. Vinculo entre professor e alunos
-
-Cada aluno pode ser vinculado a um professor responsavel. Esse professor passa a acompanhar a base de alunos sob sua orientacao e realiza a analise dos certificados enviados.
-
-### 2. Organizacao por grupos de horas
-
-As horas complementares sao divididas em grupos com:
-
-- numero identificador
-- descricao da categoria
-- carga horaria maxima
-
-Isso permite que a instituicao mantenha regras claras sobre o aproveitamento de cada tipo de atividade.
-
-### 3. Envio de comprovantes pelo aluno
-
-O aluno envia:
-
-- titulo da atividade
-- quantidade de horas solicitadas
-- grupo relacionado
-- comprovante em arquivo
-
-O envio fica registrado com status inicial de **pendente**.
-
-### 4. Analise pedagogica
-
-O professor pode:
-
-- aprovar o certificado
-- rejeitar o certificado
-- reenquadrar o grupo da atividade
-- definir as horas efetivamente validadas
-- registrar observacoes
-
-### 5. Atualizacao do progresso
-
-Quando um certificado e aprovado:
-
-- o total validado passa a compor o progresso do aluno
-- o grupo correspondente e atualizado
-- o historico continua visivel para consulta posterior
-
-## Perfis de Uso
-
-### Aluno
-
-O aluno acessa um ambiente voltado para acompanhamento individual.
-
-Principais recursos:
-
-- painel com resumo de certificados
-- visualizacao do progresso por grupos de horas
-- envio de novos comprovantes
-- consulta da propria lista de certificados
-- abertura do comprovante enviado
-- leitura das observacoes feitas pelo professor
-- visualizacao dos certificados aprovados dentro de cada grupo
-
-### Professor
-
-O professor acessa um ambiente de operacao e acompanhamento da turma.
-
-Principais recursos:
-
-- painel com indicadores gerais
-- cadastro manual de alunos
-- importacao de alunos por planilha
-- listagem pesquisavel da base vinculada
-- analise de certificados recebidos
-- validacao parcial ou total de horas
-- registro de observacoes pedagogicas
-
-## Funcionalidades Atuais
-
-- login por perfil
-- painel do aluno com resumo de situacao
-- painel do professor com visao operacional
-- cadastro de alunos com vinculo ao professor
-- importacao de alunos por planilha `.xlsx`, `.xls` ou `.csv`
-- envio de certificados com PDF ou imagem
-- listagem de certificados do aluno
-- analise de certificados pelo professor
-- aprovacao, rejeicao e reenquadramento de grupo
-- controle de horas validadas
-- visualizacao de certificados aprovados por grupo
-- armazenamento persistente dos comprovantes
-
-## Fluxos Principais
-
-### Fluxo do Aluno
-
-1. O aluno entra no sistema.
-2. Consulta o painel com o resumo da propria situacao.
-3. Envia um novo certificado para analise.
-4. Acompanha o status do envio.
-5. Verifica horas aprovadas e certificados por grupo.
-
-### Fluxo do Professor
-
-1. O professor acessa o painel institucional.
-2. Cadastra alunos manualmente ou por planilha.
-3. Consulta a lista de alunos vinculados.
-4. Abre a fila de certificados recebidos.
-5. Analisa cada comprovante e registra a decisao.
-
-## Regras de Negocio Ja Aplicadas
-
-- o sistema distingue perfis de `ALUNO` e `PROFESSOR`
-- o aluno entra vinculado a um professor
-- cada certificado pertence a um aluno e a um grupo
-- o professor so analisa certificados dos alunos sob sua responsabilidade
-- as horas validadas nao podem exceder as horas solicitadas
-- o certificado pode ficar em `PENDENTE`, `APROVADO` ou `REJEITADO`
-- o progresso do aluno considera apenas certificados aprovados
-- a importacao de planilha valida colunas obrigatorias, serie e duplicidade de e-mail
-
-## Experiencia de Uso
-
-O projeto foi construido com foco em clareza operacional e leitura rapida.
-
-Alguns pontos importantes da experiencia:
-
-- navegacao separada por perfil
-- cards e indicadores para leitura imediata
-- filtros e buscas nas telas operacionais
-- uso de status visuais para pendencias, aprovacoes e rejeicoes
-- acesso direto aos comprovantes
-- feedback de importacao com resumo e ocorrencias por linha
-
-## Estrutura Funcional do Projeto
-
-```text
-gestao-horas-complementares/
-|-- client/
-|   |-- src/
-|   |   |-- api/
-|   |   |-- assets/
-|   |   |-- components/
-|   |   |-- pages/
-|   |   `-- utils/
-|   `-- vercel.json
-|
-|-- server/
-|   |-- prisma/
-|   |   |-- migrations/
-|   |   |-- schema.prisma
-|   |   `-- seed.js
-|   `-- index.js
-|
-`-- README.md
+## Fluxo Principal
+```
+Aluno envia comprovante
+        │
+        ▼
+  Status: PENDENTE
+        │
+        ▼
+Professor analisa
+        │
+   ┌────┴────┐
+   ▼         ▼
+APROVADO  REJEITADO
+   │
+   ▼
+Horas validadas somam
+ao progresso do aluno
+por grupo de atividade
 ```
 
-## Estrutura Conceitual dos Dados
+---
 
-### Usuario
+## Perfis e Responsabilidades
 
-- representa aluno ou professor
-- controla nome, e-mail, serie e perfil
-- permite relacao entre professor e alunos
+### Aluno
+- Painel com resumo de situação e progresso por grupo
+- Envio de certificados (PDF ou imagem)
+- Acompanhamento de status e observações do professor
+- Visualização de horas aprovadas por categoria
 
-### Grupo
+### Professor
+- Painel operacional com indicadores da turma
+- Cadastro manual de alunos ou importação por planilha
+- Fila de certificados para análise
+- Aprovação, rejeição ou reenquadramento de grupo
+- Registro de observações pedagógicas e horas validadas
 
-- representa a categoria de horas complementares
-- define descricao e limite maximo de horas
+---
 
-### Certificado
+## Funcionalidades
 
-- registra o envio feito pelo aluno
-- guarda status da analise
-- armazena comprovante e metadados
-- registra grupo, horas solicitadas e horas validadas
+| Módulo | Funcionalidades |
+|---|---|
+| **Auth** | Login por perfil (ALUNO / PROFESSOR) |
+| **Alunos** | Cadastro manual, importação por planilha `.xlsx/.xls/.csv` |
+| **Certificados** | Envio com comprovante, análise, aprovação/rejeição, reenquadramento |
+| **Grupos** | Categorias de horas com limite máximo configurável |
+| **Progresso** | Cálculo automático por grupo com base em certificados aprovados |
+| **Importação** | Validação de colunas, série, duplicidade — relatório de ocorrências |
 
-## Importacao por Planilha
+---
 
-O modulo de importacao foi pensado para atender turmas maiores.
+## Regras de Negócio
 
-Formato esperado:
+- Aluno é sempre vinculado a um professor responsável
+- Professor analisa apenas certificados dos seus alunos
+- Horas validadas não podem exceder as horas solicitadas
+- Progresso considera apenas certificados com status `APROVADO`
+- Importação de planilha valida obrigatoriedade de campos, série e e-mail duplicado
+- Séries aceitas: `1a Serie`, `2a Serie`, `3a Serie`
 
-- `nome`
-- `email`
-- `serie`
-- `senha`
+---
 
-Series aceitas:
+## Arquitetura
+```
+gestao-horas-complementares/
+├── client/
+│   └── src/
+│       ├── api/          # cliente HTTP e endpoints
+│       ├── components/   # componentes reutilizáveis
+│       ├── pages/        # telas por perfil
+│       └── utils/        # helpers
+└── server/
+    ├── prisma/
+    │   ├── migrations/   # histórico de schema
+    │   ├── schema.prisma # modelos de dados
+    │   └── seed.js       # dados iniciais
+    └── index.js          # entry point Express
+```
 
-- `1a Serie`
-- `2a Serie`
-- `3a Serie`
+---
 
-Ao final da importacao, o sistema retorna:
+## Modelo de Dados
 
-- total de linhas lidas
-- quantos alunos foram criados
-- quantos registros foram ignorados
-- lista de ocorrencias para correcao
+| Entidade | Responsabilidade |
+|---|---|
+| `Usuario` | Aluno ou professor — nome, e-mail, série, perfil, vínculo |
+| `Grupo` | Categoria de horas — descrição e carga máxima |
+| `Certificado` | Comprovante enviado — status, horas, grupo, arquivo, observações |
 
-## Contexto de Uso Institucional
+---
 
-Este projeto pode ser utilizado como base para:
-
-- escolas tecnicas
-- cursos profissionalizantes
-- coordenacoes pedagogicas
-- controle de atividades complementares por turma
-- acompanhamento de carga horaria extracurricular por aluno
-
-Ele foi estruturado para favorecer:
-
-- transparencia
-- rastreabilidade
-- organizacao por responsabilidades
-- consulta historica das decisoes
-
-## Base Tecnologica
+## Stack Tecnológica
 
 ### Frontend
-
-- React
-- Vite
-- React Router
-- TanStack Query
-- Axios
-- Tailwind CSS
+- **React 19** com **Vite 7**
+- **TanStack Query** — gerenciamento de estado assíncrono
+- **Tailwind CSS 4** — estilização utilitária
+- **Axios** — cliente HTTP
+- **React Router** — navegação por perfil
 
 ### Backend
-
-- Node.js
-- Express
-- Prisma ORM
-- multer
-- xlsx
+- **Node.js 18+** com **Express 5**
+- **Prisma ORM** — modelagem e migrations PostgreSQL
+- **Multer** — upload de comprovantes (PDF e imagem)
+- **xlsx** — leitura e validação de planilhas
 
 ### Banco de Dados
+- **PostgreSQL** via **Supabase**
 
-- PostgreSQL
+---
 
-## Evolucao do Produto
+## Como Executar Localmente
 
-O sistema ja cobre o fluxo principal institucional, mas ainda pode evoluir em frentes como:
+### Pré-requisitos
+- Node.js 18+
+- PostgreSQL local ou conta no Supabase
 
-- autenticacao mais robusta
-- relatorios gerenciais
-- exportacao de dados
-- trilha de auditoria mais detalhada
-- notificacoes de pendencias
-- dashboards por coordenacao ou curso
+### 1. Clone o repositório
+```bash
+git clone https://github.com/Draxsd3/gestao-horas-complementares
+cd gestao-horas-complementares
+```
 
-## Observacoes
+### 2. Configure o backend
+```bash
+cd server
+npm install
+cp .env.example .env
+```
 
-- o projeto foi pensado para uso educacional e institucional
-- o fluxo atual privilegia clareza operacional e demonstracao funcional
-- a arquitetura separa bem os modulos de aluno, professor, grupos e certificados
+Variáveis principais em `server/.env`:
+```
+DATABASE_URL=postgresql://...
+JWT_SECRET=
+PORT=3333
+```
 
-## Licenca
+### 3. Execute as migrations e o seed
+```bash
+npx prisma migrate dev
+node prisma/seed.js
+```
+
+### 4. Inicie o backend
+```bash
+npm run dev
+# API disponível em http://localhost:3333
+```
+
+### 5. Configure e inicie o frontend
+```bash
+cd ../client
+npm install
+npm run dev
+# App disponível em http://localhost:5173
+```
+
+---
+
+## Importação por Planilha
+
+O módulo de importação processa turmas completas em lote.
+
+**Formato esperado:**
+
+| Campo | Obrigatório |
+|---|---|
+| `nome` | Sim |
+| `email` | Sim |
+| `serie` | Sim |
+| `senha` | Sim |
+
+**Ao final da importação o sistema retorna:**
+- Total de linhas lidas
+- Alunos criados com sucesso
+- Registros ignorados
+- Lista de ocorrências com descrição por linha
+
+---
+
+## Diferenciais Técnicos
+
+- Separação clara de responsabilidades: cliente, servidor e banco independentes
+- Prisma com migrations versionadas — schema rastreável e reversível
+- Upload de comprovantes com Multer integrado ao fluxo de análise
+- Importação de planilhas com validação de dados e relatório de erros
+- Regras de negócio aplicadas no backend — progresso calculado server-side
+- Controle de acesso por perfil em todas as rotas protegidas
+
+---
+
+## Roadmap
+
+- [ ] Autenticação com refresh token
+- [ ] Relatórios gerenciais por turma e curso
+- [ ] Exportação de dados em PDF/Excel
+- [ ] Trilha de auditoria detalhada por certificado
+- [ ] Notificações de pendências para professor e aluno
+- [ ] Dashboard por coordenação ou curso
+
+---
+
+## Contexto Institucional
+
+Projeto desenvolvido como solução para escolas técnicas e
+cursos profissionalizantes que precisam controlar atividades
+complementares com rastreabilidade e transparência.
+
+Aplicável a: escolas técnicas · cursos profissionalizantes ·
+coordenações pedagógicas · controle por turma e série.
+
+---
+
+## Licença
 
 Projeto de uso educacional.
